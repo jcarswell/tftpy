@@ -26,11 +26,13 @@ class TftpClient(TftpSession):
         self.filename = None
         self.options = options
         self.localip = localip
+
         if 'blksize' in self.options:
             size = self.options['blksize']
             tftpassert(int == type(size), "blksize must be an int")
+
             if size < MIN_BLKSIZE or size > MAX_BLKSIZE:
-                raise TftpException("Invalid blksize: %d" % size)
+                raise TftpException(f"Invalid blksize: {size}")
 
     def download(self, filename, output, packethook=None, timeout=SOCK_TIMEOUT):
         """This method initiates a tftp download from the configured remote
@@ -43,10 +45,11 @@ class TftpClient(TftpSession):
         that the client will wait for a receive packet to arrive.
 
         Note: If output is a hyphen, stdout is used."""
+
         # We're downloading.
         log.debug("Creating download context with the following params:")
-        log.debug("host = %s, port = %s, filename = %s" % (self.host, self.iport, filename))
-        log.debug("options = %s, packethook = %s, timeout = %s" % (self.options, packethook, timeout))
+        log.debug(f" host = {self.host}, port = {self.port}, filename = {filename}")
+        log.debug(f" options = {self.options}, packethook = {packethook}, timeout = {timeout}")
         self.context = TftpContextClientDownload(self.host,
                                                  self.iport,
                                                  filename,
@@ -55,6 +58,7 @@ class TftpClient(TftpSession):
                                                  packethook,
                                                  timeout,
                                                  localip = self.localip)
+
         self.context.start()
         # Download happens here
         self.context.end()
@@ -66,10 +70,10 @@ class TftpClient(TftpSession):
         if metrics.duration == 0:
             log.info("Duration too short, rate undetermined")
         else:
-            log.info("Downloaded %.2f bytes in %.2f seconds" % (metrics.bytes, metrics.duration))
-            log.info("Average rate: %.2f kbps" % metrics.kbps)
-        log.info("%.2f bytes in resent data" % metrics.resent_bytes)
-        log.info("Received %d duplicate packets" % metrics.dupcount)
+            log.info(f"Downloaded {metrics.bytes:.2f} bytes in {metrics.duration:.2f} seconds")
+            log.info(f"Average rate: {metrics.kbps:.2f} kbps")
+        log.info(f"{metrics.resent_bytes:.2f} bytes in resent data")
+        log.info(f"Received {metrics.dupcount} duplicate packets")
 
     def upload(self, filename, input, packethook=None, timeout=SOCK_TIMEOUT):
         """This method initiates a tftp upload to the configured remote host,
@@ -82,6 +86,7 @@ class TftpClient(TftpSession):
         the client will wait for a DAT packet to be ACKd by the server.
 
         Note: If input is a hyphen, stdin is used."""
+
         self.context = TftpContextClientUpload(self.host,
                                                self.iport,
                                                filename,
@@ -90,6 +95,7 @@ class TftpClient(TftpSession):
                                                packethook,
                                                timeout,
                                                localip = self.localip)
+        
         self.context.start()
         # Upload happens here
         self.context.end()
@@ -101,7 +107,7 @@ class TftpClient(TftpSession):
         if metrics.duration == 0:
             log.info("Duration too short, rate undetermined")
         else:
-            log.info("Uploaded %d bytes in %.2f seconds" % (metrics.bytes, metrics.duration))
-            log.info("Average rate: %.2f kbps" % metrics.kbps)
-        log.info("%.2f bytes in resent data" % metrics.resent_bytes)
-        log.info("Resent %d packets" % metrics.dupcount)
+            log.info(f"Uploaded {metrics.bytes} bytes in {metrics.duration:.2f} seconds")
+            log.info(f"Average rate: {metrics.kbps:.2f} kbps")
+        log.info(f"{metrics.resent_bytes:.2f} bytes in resent data")
+        log.info(f"Resent {metrics.dupcount} packets")

@@ -14,9 +14,9 @@ directly. The TftpClient and TftpServer classes can be reached through it.
 import sys
 
 # Make sure that this is at least Python 2.7
-required_version = (2, 7)
+required_version = (3, 6)
 if sys.version_info < required_version:
-    raise ImportError("Requires at least Python 2.7")
+    raise ImportError("Requires at least Python 3.6")
 
 from .TftpShared import *
 from . import TftpPacketTypes
