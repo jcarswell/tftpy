@@ -2,4 +2,4 @@
 buffer, and return the appropriate TftpPacket object to represent it, via the
 parse() method."""
 
-from .factory import TftpPacketFactory
+from .factory import PacketFactory

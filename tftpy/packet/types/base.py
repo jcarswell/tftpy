@@ -1,5 +1,6 @@
 import struct
 import logging
+
 from tftpy.shared import tftpassert
 from tftpy.exceptions import TftpException
 
@@ -111,7 +112,7 @@ class TftpPacketInitial(TftpPacket, TftpPacketWithOptions):
     they share quite a bit of code."""
     
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.filename = None
         self.mode = None
 

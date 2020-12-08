@@ -2,22 +2,22 @@ import logging
 import struct
 
 from tftpy.shared import tftpassert
-from tftpy.packet.types import TftpPacketRRQ,TftpPacketWRQ,TftpPacketDAT,TftpPacketACK,TftpPacketERR,TftpPacketOACK
+from tftpy.packet import types
 
 logger = logging.getLogger()
 
-class TftpPacketFactory:
+class PacketFactory:
     """This class generates TftpPacket objects. It is responsible for parsing
     raw buffers off of the wire and returning objects representing them, via
     the parse() method."""
     
     classes = {
-        1: TftpPacketRRQ,
-        2: TftpPacketWRQ,
-        3: TftpPacketDAT,
-        4: TftpPacketACK,
-        5: TftpPacketERR,
-        6: TftpPacketOACK
+        1: types.ReadRQ,
+        2: types.WriteRQ,
+        3: types.Data,
+        4: types.Ack,
+        5: types.Error,
+        6: types.OptionAck
         }
 
     def parse(self, buffer):

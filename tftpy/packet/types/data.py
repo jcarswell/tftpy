@@ -5,7 +5,7 @@ from .base import TftpPacket
 
 logger = logging.getLogger()
 
-class TftpPacketDAT(TftpPacket):
+class Data(TftpPacket):
     """
            2 bytes  2 bytes  n bytes
            ---------------------~~--

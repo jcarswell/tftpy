@@ -7,7 +7,7 @@ from tftpy.exceptions import TftpException
 
 logger = logging.getLogger()
 
-class TftpPacketERR(TftpPacket):
+class Error(TftpPacket):
     """
         Error Packet
         

@@ -7,7 +7,7 @@ from tftpy.shared import MIN_BLKSIZE, MAX_BLKSIZE
 
 logger = logging.getLogger()
 
-class TftpPacketACK(TftpPacket):
+class Ack(TftpPacket):
     """
     Acknowledgement Packet
            2 bytes  2 bytes
@@ -38,7 +38,7 @@ class TftpPacketACK(TftpPacket):
         return self
 
 
-class TftpPacketOACK(TftpPacketInitial):
+class OptionAck(TftpPacketInitial):
     """
     Option Acknowledgement
     +-------+---~~---+---+---~~---+---+---~~---+---+---~~---+---+
@@ -47,7 +47,7 @@ class TftpPacketOACK(TftpPacketInitial):
     """
     
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.opcode = 6
 
     def __str__(self):

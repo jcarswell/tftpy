@@ -1,4 +1,4 @@
-from .request import ReadRQ as TftpPacketRRQ, WriteRQ as TftpPacketWRQ
-from .acknowledge import TftpPacketACK,TftpPacketOACK
-from .data import TftpPacketDAT 
-from .error import TftpPacketERR
+from .request import ReadRQ,WriteRQ
+from .acknowledge import Ack,OptionAck
+from .data import Data 
+from .error import Error
