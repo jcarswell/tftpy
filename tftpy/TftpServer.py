@@ -11,14 +11,14 @@ import select
 import threading
 import logging
 from errno import EINTR
-from .TftpShared import *
-from .TftpPacketTypes import *
-from .TftpPacketFactory import TftpPacketFactory
+from .shared import *
+from tftpy.packet.types import TftpPacketRRQ,TftpPacketWRQ,TftpPacketDAT,TftpPacketACK,TftpPacketERR,TftpPacketOACK
+from tftpy.packet.factory import TftpPacketFactory
 from .TftpContexts import TftpContextServer
 
 log = logging.getLogger('tftpy.TftpServer')
 
-class TftpServer(TftpSession):
+class TftpServer:
     """This class implements a tftp server object. Run the listen() method to
     listen for client requests.
 
@@ -34,15 +34,11 @@ class TftpServer(TftpSession):
     requested destination path and server context. It must either return a
     file-like object ready for writing or None if the path is invalid."""
 
-    def __init__(self,
-                 tftproot='/tftpboot',
-                 dyn_file_func=None,
-                 upload_open=None):
+    def __init__(self, tftproot='./tftpboot', dyn_file_func=None, upload_open=None):
 
         self.listenip = None
         self.listenport = None
         self.sock = None
-        # FIXME: What about multiple roots?
         self.root = os.path.abspath(tftproot)
         self.dyn_file_func = dyn_file_func
         self.upload_open = upload_open
@@ -76,8 +72,6 @@ class TftpServer(TftpSession):
         defaults to INADDR_ANY (all interfaces) and UDP port 69. You can also
         supply a different socket timeout value, if desired."""
 
-        tftp_factory = TftpPacketFactory()
-
         listenip = listenip or '0.0.0.0'
 
         log.info(f"Server requested on ip {listenip}, port {listenport}")
@@ -88,7 +82,7 @@ class TftpServer(TftpSession):
             _, self.listenport = self.sock.getsockname()
         except socket.error as err:
             # Reraise it for now.
-            raise err
+            raise socket.error(err)
 
         self.is_running.set()
 
@@ -168,8 +162,8 @@ class TftpServer(TftpSession):
 
                     log.info("Currently handling these sessions:")
 
-                    for session_key,session in self.sessions.items():
-                        log.info(f"    {session}" % session)
+                    for _,session in self.sessions.items():
+                        log.info(f"    {session}")
 
                 else:
                     # Must find the owner of this traffic.
@@ -197,7 +191,7 @@ class TftpServer(TftpSession):
 
             for key in self.sessions:
                 try:
-                    self.sessions[key].checkTimeout(now)
+                    self.sessions[key].check_timeout(now)
                 except TftpTimeout as err:
                     log.error(str(err))
                     self.sessions[key].retry_count += 1

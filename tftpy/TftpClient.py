@@ -7,24 +7,24 @@ performed via a standard logging object set in TftpShared."""
 
 import types
 import logging
-from .TftpShared import *
-from .TftpPacketTypes import *
+from .shared import *
+from tftpy.packet.types import TftpPacketRRQ,TftpPacketWRQ,TftpPacketDAT,TftpPacketACK,TftpPacketERR,TftpPacketOACK
 from .TftpContexts import TftpContextClientDownload, TftpContextClientUpload
+from .exceptions import TftpException
 
 log = logging.getLogger('tftpy.TftpClient')
 
-class TftpClient(TftpSession):
+class TftpClient:
     """This class is an implementation of a tftp client. Once instantiated, a
     download can be initiated via the download() method, or an upload via the
     upload() method."""
 
-    def __init__(self, host, port=69, options={}, localip = ""):
-        TftpSession.__init__(self)
+    def __init__(self, host, port=69, options=None, localip = ""):
         self.context = None
         self.host = host
         self.iport = port
         self.filename = None
-        self.options = options
+        self.options = options or {}
         self.localip = localip
 
         if 'blksize' in self.options:
@@ -48,15 +48,15 @@ class TftpClient(TftpSession):
 
         # We're downloading.
         log.debug("Creating download context with the following params:")
-        log.debug(f" host = {self.host}, port = {self.port}, filename = {filename}")
+        log.debug(f" host = {self.host}, port = {self.iport}, filename = {filename}")
         log.debug(f" options = {self.options}, packethook = {packethook}, timeout = {timeout}")
         self.context = TftpContextClientDownload(self.host,
                                                  self.iport,
-                                                 filename,
-                                                 output,
-                                                 self.options,
-                                                 packethook,
                                                  timeout,
+                                                 output,
+                                                 packethook,
+                                                 self.options,
+                                                 filename = filename,
                                                  localip = self.localip)
 
         self.context.start()
@@ -89,11 +89,11 @@ class TftpClient(TftpSession):
 
         self.context = TftpContextClientUpload(self.host,
                                                self.iport,
-                                               filename,
-                                               input,
-                                               self.options,
-                                               packethook,
                                                timeout,
+                                               input,
+                                               packethook,
+                                               filename = filename,
+                                               options = self.options,
                                                localip = self.localip)
         
         self.context.start()
