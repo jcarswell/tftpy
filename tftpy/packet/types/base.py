@@ -14,7 +14,11 @@ class TftpPacketWithOptions:
     def __init__(self):
         self.options = {}
 
-    @property.setter
+    @property
+    def options(self):
+        return self._options
+
+    @options.setter
     def options(self, options):
         logger.debug("in TftpPacketWithOptions.setoptions")
         logger.debug("options: %s", options)
@@ -31,10 +35,6 @@ class TftpPacketWithOptions:
 
         logger.debug("setting options hash to: %s", myoptions)
         self._options = myoptions
-
-    @property
-    def options(self):
-        return self._options
 
     def decode_options(self, buffer):
         """This method decodes the section of the buffer that contains an
@@ -132,8 +132,11 @@ class TftpPacketInitial(TftpPacket, TftpPacketWithOptions):
             mode = mode.encode('ascii')
 
         ptype = None
-        if self.opcode == 1: ptype = "RRQ"
-        else:                ptype = "WRQ"
+        if self.opcode == 1: 
+            ptype = "RRQ"
+        else:
+            ptype = "WRQ"
+            
         logger.debug(f"Encoding {ptype} packet, filename = {filename}, mode = {mode}")
         
 
@@ -182,7 +185,6 @@ class TftpPacketInitial(TftpPacket, TftpPacketWithOptions):
     def decode(self):
         tftpassert(self.buffer, "Can't decode, buffer is empty")
 
-        # FIXME - this shares a lot of code with decode_options
         nulls = 0
         fmt = b""
         nulls = length = tlength = 0

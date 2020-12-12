@@ -3,7 +3,6 @@ import logging
 from tftpy.shared import tftpassert,TftpErrors,DELAY_BLOCK,MIN_BLKSIZE,MAX_BLKSIZE
 from tftpy.exceptions import TftpException,TftpOptionsError
 from tftpy.packet import types
-from .states import ExpectData
 from tftpy.shared import TftpErrors
 
 logger = logging.getLogger()

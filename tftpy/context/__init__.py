@@ -8,5 +8,5 @@ the next packet in the transfer, and returns a state object until the transfer
 is complete, at which point it returns None. That is, unless there is a fatal
 error, in which case a TftpException is returned instead."""
 
-from .server import Context
+from .server import Server
 from .client import Upload,Download

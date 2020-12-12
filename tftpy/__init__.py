@@ -18,10 +18,5 @@ required_version = (3, 6)
 if sys.version_info < required_version:
     raise ImportError("Requires at least Python 3.6")
 
-from .TftpShared import *
-from . import TftpPacketTypes
-from . import TftpPacketFactory
-from .TftpClient import TftpClient
-from .TftpServer import TftpServer
-from . import TftpContexts
-from . import TftpStates
+from .server import TftpServer
+from .client import TftpClient

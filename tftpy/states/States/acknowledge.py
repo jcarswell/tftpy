@@ -2,7 +2,7 @@ import logging
 
 from tftpy.states.base import TftpState
 from tftpy.exceptions import TftpException
-from tftp.packet import types
+from tftpy.packet import types
 
 logger = logging.getLogger()
 

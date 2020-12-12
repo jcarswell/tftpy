@@ -27,11 +27,11 @@ class Server(Context):
         loop on cycle(), as it expects the TftpServer object to manage
         that."""
         
-        logger.debug("In TftpContextServer.start")
+        logger.debug("In tftpy.contex.server.start")
         self.metrics.start_time = self.last_update = time.time()
 
         pkt = self.factory.parse(buffer)
-        logger.debug(f"TftpContextServer.start() - factory returned a {pkt}")
+        logger.debug(f"tftpy.contex.server.start() - factory returned a {pkt}")
 
         # Call handle once with the initial packet. This should put us into
         # the download or the upload state.

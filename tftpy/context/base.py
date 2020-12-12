@@ -115,14 +115,19 @@ class Context:
         
         return self.__host
 
-    @property.setter
+    @host.setter
     def host(self, host):
         """Sets the address property as a result of the host that is set."""
         
         self.__host = host
         self.address = socket.gethostbyname(host)
 
-    @property.setter
+    @property
+    def next_block(self):
+        """Gets the next_block"""
+        return self.__eblock
+
+    @next_block.setter
     def next_block(self, block):
         """Sets the next block or roles over if greater than 2^16 blocks"""
         
@@ -131,11 +136,6 @@ class Context:
             block = 0
         self.__eblock = block
 
-    @property
-    def next_block(self):
-        """Gets the next_block"""
-        return self.__eblock
-    
     def __str__(self):
         return f"{self.host}:{self.port} {self.state}"
     
