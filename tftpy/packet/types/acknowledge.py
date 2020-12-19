@@ -80,30 +80,27 @@ class OptionAck(TftpPacketInitial):
         self.options = self.decode_options(self.buffer[2:])
         return self
 
-    def match_options(self, options):
+    def match_options(self, option, value):
         """This method takes a set of options, and tries to match them with
         its own. It can accept some changes in those options from the server as
         part of a negotiation. Changed or unchanged, it will return a dict of
         the options so that the session can update itself to the negotiated
         options."""
         
-        for name in self.options:
-            if name in options:
-                if name == 'blksize':
-                    # We can accept anything between the min and max values.
-                    size = int(self.options[name])
-                    if size >= MIN_BLKSIZE and size <= MAX_BLKSIZE:
-                        logger.debug(f"negotiated blksize of {size} bytes")
-                        options['blksize'] = size
-                    else:
-                        raise TftpException(f"blksize {size} option outside allowed range")
-                
-                elif name == 'tsize':
-                    size = int(self.options[name])
-                    if size < 0:
-                        raise TftpException("Negative file sizes not supported")
-                
-                else:
-                    raise TftpException(f"Unsupported option: {name}")
-                
-        return True
+        if option == 'blksize':
+            # We can accept anything between the min and max values.
+            value = int(value)
+            if MIN_BLKSIZE <= value <= MAX_BLKSIZE:
+                logger.debug(f"negotiated blksize of {value} bytes")
+            else:
+                raise TftpException(f"blksize {value} option outside allowed range")
+        
+        elif option == 'tsize':
+            value = int(value)
+            if value < 0:
+                raise TftpException("Negative file sizes not supported")
+        
+        else:
+            raise TftpException(f"Unsupported option: {value}")
+
+        return value

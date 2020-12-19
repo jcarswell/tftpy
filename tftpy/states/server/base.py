@@ -35,7 +35,7 @@ class TftpServerState(TftpState):
 
         if options:
             logger.debug(f"Options requested: {options}")
-            supported_options = self.return_Supported_options(options)
+            supported_options = self.return_supported_options(options)
             self.context.options.update(supported_options)
             sendoack = True
 

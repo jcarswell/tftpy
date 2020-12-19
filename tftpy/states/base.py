@@ -27,15 +27,13 @@ class TftpState:
         """This method handles an OACK from the server, syncing any accepted
         options."""
         if len(pkt.options.keys()) > 0:
-            if pkt.match_options(self.context.options):
-                logger.info("Successful negotiation of options")
-                # Set options to OACK options
-                self.context.options = pkt.options
-                for key in self.context.options:
-                    logger.info(f"    {key} = {self.context.options[key]}")
-            else:
-                logger.error("Failed to negotiate options")
-                raise TftpOptionsError("Failed to negotiate options")
+            try:
+                for k,v in pkt.options.items():
+                    self.context.options[k.lower()] = pkt.match_options(k.lower(),v)
+            except TftpException as e:
+                logger.warning(e)
+                # Continue if the option isn't currently supported
+
         else:
             raise TftpException("No options found in OACK")
 
@@ -47,24 +45,31 @@ class TftpState:
         
         accepted_options = {}
         
-        for option in options:
-            if option == 'blksize':
+        for k,v in options.items():
+            k = k.lower()
+            if k == 'blksize':
                 # Make sure it's valid.
-                if int(options[option]) > MAX_BLKSIZE:
+                if int(v) > MAX_BLKSIZE:
                     logger.info(f"Client requested blksize greater than {MAX_BLKSIZE} setting to maximum")
-                    accepted_options[option] = MAX_BLKSIZE
-                elif int(options[option]) < MIN_BLKSIZE:
+                    v = MAX_BLKSIZE
+                elif int(v) < MIN_BLKSIZE:
                     logger.info(f"Client requested blksize less than {MIN_BLKSIZE} setting to minimum") 
-                    accepted_options[option] = MIN_BLKSIZE
+                    v = MIN_BLKSIZE
                 else:
-                    accepted_options[option] = options[option]
-            elif option == 'tsize':
-                logger.debug("tsize option is set")
-                accepted_options['tsize'] = 0
+                    v = int(v)
+            elif k == 'tsize':
+                if int(v) < 0:
+                    logger.info("Client requested a tsize less that 0, setting to 0")
+                    v = 0
+                else:
+                    v = int(v)
             else:
-                logger.info(f"Dropping unsupported option: {option}")
-        
-        logger.debug(f"Returning these accepted options: {accepted_options}")
+                logger.info(f"Dropping unsupported option: {k}")
+                v = None
+                
+            if v is not None:
+                logger.debug(f"setting option {k} to {v}")
+                accepted_options[k] = v
         
         return accepted_options
 
