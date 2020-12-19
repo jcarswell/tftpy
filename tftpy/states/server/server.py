@@ -1,10 +1,10 @@
 import logging
 import os
 
-from tftpy.states.base import TftpState
+from tftpy.states.base import TftpState,ExpectData
 from .base import TftpServerState
 from tftpy.exceptions import TftpException,TftpOptionsError,TftpFileNotFoundError
-from tftpy.states.states import ExpectAck,ExpectData
+from tftpy.states.states import ExpectAck
 from tftpy.packet import types
 from tftpy.shared import TftpErrors
 
@@ -19,7 +19,7 @@ class ReceiveReadRQ(TftpServerState):
         
         logger.debug("In TftpStateServerRecvRRQ.handle")
         
-        sendoack = self.serverInitial(pkt, raddress, rport)
+        sendoack = self.server_initial(pkt, raddress, rport)
         logger.info(f"Opening file {self.full_path} for reading")
         
         if os.path.exists(self.full_path):
@@ -100,7 +100,7 @@ class ReceiveWriteRQ(TftpServerState):
 
         logger.debug("In TftpStateServerRecvWRQ.handle")
         
-        sendoack = self.serverInitial(pkt, raddress, rport)
+        sendoack = self.server_initial(pkt, raddress, rport)
         
         if self.context.upload_open:
             f = self.context.upload_open(self.full_path, self.context)

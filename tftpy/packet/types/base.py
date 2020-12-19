@@ -4,7 +4,7 @@ import logging
 from tftpy.shared import tftpassert
 from tftpy.exceptions import TftpException
 
-logger = logging.getLogger()
+logger = logging.getLogger('tftp.packet.types.base')
 
 class TftpPacketWithOptions:
     """This class exists to permit some TftpPacket subclasses to share code

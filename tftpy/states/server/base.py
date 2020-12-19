@@ -17,7 +17,7 @@ class TftpServerState(TftpState):
         # managed.
         self.full_path = None
 
-    def serverInitial(self, pkt, raddress, rport):
+    def server_initial(self, pkt, raddress, rport):
         """This method performs initial setup for a server context transfer,
         put here to refactor code out of the TftpStateServerRecvRRQ and
         TftpStateServerRecvWRQ classes, since their initial setup is

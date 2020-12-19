@@ -4,14 +4,14 @@ import time
 from .base import Context
 from tftpy.states import Start
 
-logger = logging.getLogger()
+logger = logging.getLogger('tftpy.context.server')
 
 class Server(Context):
     """The context for the server."""
     
     def __init__(self, host, port, timeout, root, dyn_file_func=None, upload_open=None, **kwargs):
         
-        super().__init__(self, host, port, timeout, **kwargs)
+        super().__init__(host, port, timeout, **kwargs)
         
         # At this point we have no idea if this is a download or an upload. We
         # need to let the start state determine that.

@@ -16,7 +16,7 @@ from tftpy.packet import types
 from tftpy.context import Server
 from tftpy.exceptions import TftpException,TftpTimeout
 
-logger = logging.getLogger('tftpy.TftpServer')
+logger = logging.getLogger('tftpy.server')
 
 class TftpServer:
     """This class implements a tftp server object. Run the listen() method to
@@ -97,6 +97,8 @@ class TftpServer:
             logger.debug(f" shutdown_immediately: {self.shutdown_immediately}")
             logger.debug(f" shutdown_gracefully: {self.shutdown_gracefully}")
             
+            deletion_list = []
+            
             if self.shutdown_immediately:
                 logger.warning(f"Shutting down now. Session count: {len(self.sessions)}")
                 self.sock.close()
@@ -121,14 +123,14 @@ class TftpServer:
             logger.debug(f"Performing select on this inputlist: {inputlist}")
             try:
                 readyinput, _, _ = select.select(inputlist, [], [], self.timeout)
-            except select.error as err:
-                if err[0] == EINTR:
+            except OSError as err:
+                if err.args[0] == EINTR:
                     # Interrupted system call
                     logger.debug("Interrupted syscall, retrying")
                     continue
                 else:
                     raise # what are we raising
-
+            
             # Handle the available data, if any. Maybe we timed-out.
             for readysock in readyinput:
                 # Is the traffic on the main server socket? ie. new session?
@@ -149,11 +151,11 @@ class TftpServer:
                         deletion_list.append(key)
                     else:
                         logger.debug(f"resending on session {self.sessions[key]}")
-                        self.sessions[key].state.resendLast()
+                        self.sessions[key].state.resend_last()
 
             logger.debug("Iterating deletion list.")
             for key in deletion_list:
-                logger.info("Session {key} complete")
+                logger.info(f"Session {key} complete")
                 if key in self.sessions:
                     logger.debug("Gathering up metrics from session before deleting")
                     self.sessions[key].end()
@@ -198,7 +200,7 @@ class TftpServer:
 
             # Forge a session key based on the client's IP and port,
             # which should safely work through NAT.
-            key = f"{raddress:rport}"
+            key = f"{raddress}:{rport}"
 
             if not key in self.sessions:
                 logger.debug(f"Creating new server context for session key = {key}")

@@ -5,7 +5,7 @@ from .base import TftpPacket, TftpPacketInitial
 from tftpy.exceptions import TftpException
 from tftpy.shared import MIN_BLKSIZE, MAX_BLKSIZE
 
-logger = logging.getLogger()
+logger = logging.getLogger('tftpy.packet.types.acknowledge')
 
 class Ack(TftpPacket):
     """
@@ -16,7 +16,7 @@ class Ack(TftpPacket):
            -----------------
     """
     def __init__(self):
-        TftpPacket.__init__(self)
+        super().__init__()
         self.opcode = 4
         self.blocknumber = 0
 

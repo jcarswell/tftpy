@@ -3,7 +3,7 @@ import logging
 
 from .base import TftpPacket
 
-logger = logging.getLogger()
+logger = logging.getLogger('tftpy.packet.types.data')
 
 class Data(TftpPacket):
     """
@@ -13,7 +13,7 @@ class Data(TftpPacket):
            ---------------------~~--
     """
     def __init__(self):
-        TftpPacket.__init__(self)
+        super().__init__()
         self.opcode = 3
         self.blocknumber = 0
         self.data = None

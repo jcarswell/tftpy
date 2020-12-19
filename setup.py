@@ -7,6 +7,14 @@ from distutils.core import setup
 long_description = """\
 Copyright, Michael P. Soulier, 2010.
 
+About Release 0.9.0:
+- Author Josh Carswell
+====================
+Major code re-orginization and updating, we no-loger import everything
+All class and function names now follow PEP8 - not following the classic 80 char limit rule
+Cleared up some of the TODOs/FIXME items
+
+
 About Release 0.8.0:
 ====================
 This version introduces Python 3.X support.
@@ -112,7 +120,7 @@ easy inclusion in a UI for populating progress indicators. It supports RFCs
 
 Dependencies:
 -------------
-Python 2.7+, hopefully. Let me know if it fails to work.
+Python 3.6+, hopefully. Let me know if it fails to work.
 
 Trifles:
 --------

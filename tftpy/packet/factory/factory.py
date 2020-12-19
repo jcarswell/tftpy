@@ -4,14 +4,14 @@ import struct
 from tftpy.shared import tftpassert
 from tftpy.packet import types
 
-logger = logging.getLogger()
+logger = logging.getLogger('tftpy.packet.factory')
 
 class PacketFactory:
     """This class generates TftpPacket objects. It is responsible for parsing
     raw buffers off of the wire and returning objects representing them, via
     the parse() method."""
     
-    classes = {
+    _classes = {
         1: types.ReadRQ,
         2: types.WriteRQ,
         3: types.Data,
@@ -36,7 +36,7 @@ class PacketFactory:
         """This method returns the appropriate class object corresponding to
         the passed opcode."""
         
-        tftpassert(opcode in self.classes, f"Unsupported opcode: {opcode}")
-        packet = self.classes[opcode]()
+        tftpassert(opcode in self._classes, f"Unsupported opcode: {opcode}")
+        packet = self._classes[opcode]()
 
         return packet

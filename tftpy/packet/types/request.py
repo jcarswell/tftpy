@@ -9,7 +9,7 @@ class ReadRQ(TftpPacketInitial):
           -----------------------------------------------
     """
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.opcode = 1
 
     def __str__(self):
@@ -28,7 +28,7 @@ class WriteRQ(TftpPacketInitial):
     """
     
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.opcode = 2
 
     def __str__(self):

@@ -4,14 +4,14 @@
 
 import unittest
 import logging
-import tftpy
+import tftp.tftpy
 import os
 import time
 import threading
 from errno import EINTR
 from multiprocessing import Queue
 
-log = logging.getLogger('tftpy')
+log = logging.getLogger('tftpy_test')
 log.setLevel(logging.DEBUG)
 
 # console handler
@@ -167,6 +167,7 @@ class TestTftpyState(unittest.TestCase):
         client = tftpy.TftpClient('localhost',
                                   20001,
                                   options)
+
         # Fork a server and run the client in this process.
         child_pid = os.fork()
         if child_pid:

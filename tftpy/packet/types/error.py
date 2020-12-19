@@ -5,7 +5,7 @@ from .base import TftpPacket
 from tftpy.shared import tftpassert
 from tftpy.exceptions import TftpException
 
-logger = logging.getLogger()
+logger = logging.getLogger('tftpy.packet.types.error')
 
 class Error(TftpPacket):
     """
@@ -31,7 +31,7 @@ class Error(TftpPacket):
     8         Failed to negotiate options
     """
     def __init__(self):
-        TftpPacket.__init__(self)
+        super().__init__()
         self.opcode = 5
         self.errorcode = 0
         # FIXME: We don't encode the errmsg...

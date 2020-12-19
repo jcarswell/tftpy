@@ -2,10 +2,9 @@ import logging
 
 from tftpy.packet import types
 from tftpy.shared import TftpErrors,DEF_BLKSIZE
-from tftpy.states.base import TftpState
+from tftpy.states.base import TftpState,ExpectData
 from tftpy.exceptions import TftpException, TftpOptionsError, TftpFileNotFoundError
 from .acknowledge import ExpectAck
-from .data import ExpectData
 
 logger = logging.getLogger()
 

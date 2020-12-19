@@ -7,12 +7,12 @@ from tftpy.exceptions import TftpException,TftpTimeout
 from tftpy.packet.factory import PacketFactory
 from .metrics import Metrics
 
-logger = logging.getLogger()
+logger = logging.getLogger('tftpy.context.base')
 
 class Context:
     """The base class of the contexts."""
 
-    def __init__(self, host, port, timeout, localip = None, **kwargs):
+    def __init__(self, host, port, timeout, **kwargs):
         """Constructor for the base context, setting shared instance
         variables.
 
@@ -36,6 +36,7 @@ class Context:
         self.packethook = kwargs.get('packethook', None)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.mode = kwargs.get('mode', "octet")
+        localip = kwargs.get('localip', None)
         
         if localip is not None:
             self.sock.bind((localip, 0))
@@ -47,7 +48,7 @@ class Context:
         self.factory = PacketFactory()
         # Note, setting the host will also set self.address, as it's a property.
         self.host = host
-        self.port = port
+        self.port = int(port)
         # The port associated with the TID
         self.tidport = None
         # Metrics
@@ -189,7 +190,14 @@ class Context:
             pkt (class): tftpy.packet.types class
         """
         
-        self.sock.sendto(pkt.encode().buffer, (self.host, self.port))
+        _ = pkt.encode()
+        
+        logger.debug("send data")
+        logger.debug(f"  sendto buffer: {type(pkt.buffer)}{pkt.buffer}")
+        logger.debug(f"  sendto host: {type(self.host)}{self.host}")
+        logger.debug(f"  sendto port: {type(self.port)}{self.port}")
+        
+        self.sock.sendto(pkt.buffer, (self.host, self.port))
         
         if self.next_block == 0:
             self.next_block = 1

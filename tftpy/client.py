@@ -12,7 +12,7 @@ from tftpy.shared import MIN_BLKSIZE,MAX_BLKSIZE,SOCK_TIMEOUT,tftpassert
 from tftpy.context import Upload,Download
 from tftpy.exceptions import TftpException
 
-logger = logging.getLogger()
+logger = logging.getLogger('tftpy.client')
 
 class TftpClient:
     """This class is an implementation of a tftp client. Once instantiated, a

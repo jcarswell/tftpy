@@ -2,7 +2,7 @@ import logging
 
 from tftpy.shared import tftpassert,MAX_DUPS
 
-logger = logging.getLogger()
+logger = logging.getLogger('tftpy.context.metrics.base')
 
 class Metrics:
     """A class representing metrics of the transfer."""

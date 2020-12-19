@@ -83,7 +83,7 @@ class TftpState:
             time.sleep(10)
         
         dat = None
-        blksize = self.context.block_size()
+        blksize = self.context.block_size
         buffer = self.context.fileobj.read(blksize)
         logger.debug(f"Read {len(buffer)} bytes into buffer")
         
@@ -192,7 +192,7 @@ class TftpState:
             self.context.metrics.bytes += len(pkt.data)
             
             # Check for end-of-file, any less than full data packet.
-            if len(pkt.data) < self.context.block_size():
+            if len(pkt.data) < self.context.block_size:
                 logger.info("End of file detected")
                 return None
 

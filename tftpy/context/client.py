@@ -9,7 +9,7 @@ from tftpy.packet import types
 from tftpy.exceptions import TftpException,TftpTimeout,TftpFileNotFoundError
 from tftpy.states import SentReadRQ,SentWriteRQ
 
-logger = logging.getLogger()
+logger = logging.getLogger('tftpy.context.client')
 
 class Upload(Context):
     """The upload context for the client during an upload.
@@ -17,7 +17,7 @@ class Upload(Context):
     
     def __init__(self, host, port, timeout, input, **kwargs):
                      
-        super().__init__(self, host, port, timeout, **kwargs)
+        super().__init__(host, port, timeout, **kwargs)
         
         # If the input object has a read() function, assume it is file-like.
         if hasattr(input, 'read'):
@@ -27,7 +27,7 @@ class Upload(Context):
         else:
             self.fileobj = open(input, "rb")
 
-        logger.debug("TftpContextClientUpload.__init__()")
+        logger.debug("tftpy.context.client.upload.__init__()")
         logger.debug(f" file_to_transfer = {self.file_to_transfer}, options = {self.options}")
 
     def start(self):
@@ -59,7 +59,7 @@ class Upload(Context):
                     raise TftpException("Max retries reached")
                 else:
                     logger.warning("resending last packet")
-                    self.state.resendLast()
+                    self.state.resend_last()
 
     def end(self, *args):
         """Finish up the context."""
@@ -76,7 +76,7 @@ class Download(Context):
     Note: If output is a hyphen, then the output will be sent to stdout."""
     
     def __init__(self, host, port, timeout, output, packethook, **kwargs):
-        super().__init__(self, host, port, timeout, **kwargs)
+        super().__init__(host, port, timeout, **kwargs)
         
         self.packethook = packethook
         self.filelike_fileobj = False
@@ -95,7 +95,7 @@ class Download(Context):
             except OSError as err:
                 raise TftpException("Could not open output file", err)
 
-        logger.debug("TftpContextClientDownload.__init__()")
+        logger.debug("tftpy.context.client.Download.__init__()")
         logger.debug(f" file_to_transfer = {self.file_to_transfer}, options = {self.options}")
 
     def start(self):
@@ -114,7 +114,7 @@ class Download(Context):
         pkt.options = self.options
 
         self.send(pkt)
-        self.state = SentWriteRQ(self)
+        self.state = SentReadRQ(self)
 
         while self.state:
             try:
@@ -129,7 +129,7 @@ class Download(Context):
                     raise TftpTimeout("Max retries reached")
                 else:
                     logger.warning("resending last packet")
-                    self.state.resendLast()
+                    self.state.resend_last()
                     
             except TftpFileNotFoundError as err:
                 # If we received file not found, then we should not save the open
