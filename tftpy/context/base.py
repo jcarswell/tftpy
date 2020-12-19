@@ -48,7 +48,17 @@ class Context:
         self.factory = PacketFactory()
         # Note, setting the host will also set self.address, as it's a property.
         self.host = host
-        self.port = int(port)
+        
+        if isinstance(port, int):
+            port = int(port)
+        if 0 < port < 65535:
+            self.port = port
+        elif port == 0:
+            # if the port is 0 set to the default TFTP port (69)
+            self.port = 69
+        else:
+            raise ValueError("port must be between 1 and 65534")
+        
         # The port associated with the TID
         self.tidport = None
         # Metrics
