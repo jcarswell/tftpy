@@ -28,6 +28,9 @@ class Context:
             options (dict): Options for the session
             packethook (func): function to receive a copy of the Data Packet
             mode (str): Server mode currently only supports 'octet'
+        
+        raise:
+            ValueError: invalid port number
         """
         
         self.file_to_transfer = kwargs.get('filename', None)

@@ -56,7 +56,7 @@ class Upload(Context):
                 
                 if self.retry_count >= TIMEOUT_RETRIES:
                     logger.debug("hit max retries, giving up")
-                    raise TftpException("Max retries reached")
+                    raise
                 else:
                     logger.warning("resending last packet")
                     self.state.resend_last()
@@ -75,10 +75,9 @@ class Download(Context):
     """The download context for the client during a download.
     Note: If output is a hyphen, then the output will be sent to stdout."""
     
-    def __init__(self, host, port, timeout, output, packethook, **kwargs):
+    def __init__(self, host, port, timeout, output, **kwargs):
         super().__init__(host, port, timeout, **kwargs)
         
-        self.packethook = packethook
         self.filelike_fileobj = False
 
         # If the output object has a write() function, assume it is file-like.
