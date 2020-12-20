@@ -85,13 +85,13 @@ If you were not using the base TftpServer or TftpClient classes
    ```
    Context class arguments are now
    - filename - Server side file name<br/>
-     valid: context.Uplaod, context.Download
+     valid: context.Upload, context.Download
    - options - Client Options<br/>
-     valid: context.Uplaod, context.Download
+     valid: context.Upload, context.Download
    - packethook - A function call to recieve a copy of all packet Data
-     valid: context.Uplaod, context.Download, context.Server
+     valid: context.Upload, context.Download, context.Server
    - mode - Set the operating mode. Note that only octet is currently supported
-     valid: context.Uplaod, context.Download, context.Server
+     valid: context.Upload, context.Download, context.Server
 
 ## Dependencies:
 Python 3.6+
