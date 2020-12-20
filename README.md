@@ -1,8 +1,8 @@
-# Tftpy
+# TFTPy3
 Author: Michael P. Soulier <msoulier@digitaltorque.ca>, Josh Carswell<br/>
 Copyright, Michael P. Soulier, 2010.
 
-Tftpy is a TFTP library for the Python programming language. It includes
+TFTPy3 is a TFTP library for the Python programming language. It includes
 client and server classes, with sample implementations. Hooks are included for
 easy inclusion in a UI for populating progress indicators. It supports RFCs
 1350, 2347, 2348 and the tsize option from RFC 2349.
@@ -116,7 +116,7 @@ See COPYING in this distribution.
 Josh Carswell
 
 ## Releases:
-### 0.9.0:
+### TFTPy 0.9.0 -> TFTPy3 0.1.0:
 Major re-write of the code base removing support for python 2. All classes got broken out
 into independant modules for increased readability, support and imporateability. All names
 should follow the PEP8 naming convention and code likewise generally folloes with the PEP8
