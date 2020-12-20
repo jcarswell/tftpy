@@ -32,7 +32,7 @@ client.Upload('server/dest_file','local/src_file')
 #### Download
 1. Initalize the client with the server details
 2. Specify the source file to retrive and the where to save it. 
-+
+
 It's not currently possible to use the source file name as the destination file name
 ```
 import tftpy
