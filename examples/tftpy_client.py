@@ -2,8 +2,13 @@
 # vim: ts=4 sw=4 et ai:
 # -*- coding: utf8 -*-
 
-import sys, logging, os
+import sys
+import logging
+import os
+import pathlib
+
 from optparse import OptionParser
+
 import tftpy
 
 log = logging.getLogger('tftpy')
@@ -17,33 +22,26 @@ handler.setFormatter(default_formatter)
 log.addHandler(handler)
 
 def main():
-    usage=""
+    host = None
+    src = None
+    dest = None
+    mode = None
+  
+    usage="""usage: %prog [options] source destination
+             
+             source|destination:
+               - for STDIN|STDOUT -
+               - host:file - for fetch put
+               - path/file - for source/dest file name
+               """
     parser = OptionParser(usage=usage)
-    parser.add_option('-H',
-                      '--host',
-                      help='remote host or ip address')
     parser.add_option('-p',
                       '--port',
                       help='remote port to use (default: 69)',
                       default=69)
-    parser.add_option('-f',
-                      '--filename',
-                      help='filename to fetch (deprecated, use download)')
-    parser.add_option('-D',
-                      '--download',
-                      help='filename to download')
-    parser.add_option('-u',
-                      '--upload',
-                      help='filename to upload')
     parser.add_option('-b',
                       '--blksize',
                       help='udp packet size to use (default: 512)')
-    parser.add_option('-o',
-                      '--output',
-                      help='output file, - for stdout (default: same as download)')
-    parser.add_option('-i',
-                      '--input',
-                      help='input file, - for stdin (default: same as upload)')
     parser.add_option('-d',
                       '--debug',
                       action='store_true',
@@ -63,35 +61,48 @@ def main():
                       '--localip',
                       action='store',
                       dest='localip',
-                      default="",
+                      default=None,
                       help='local IP for client to bind to (ie. interface)')
     options, args = parser.parse_args()
-    # Handle legacy --filename argument.
-    if options.filename:
-        options.download = options.filename
-    if not options.host or (not options.download and not options.upload):
-        sys.stderr.write("Both the --host and --filename options "
-                         "are required.\n")
-        parser.print_help()
-        sys.exit(1)
+    
+    if len(args) != 2:
+        parser.error("Incorrect number of arguments")
 
+    for x in range(0,2):
+        arg = args[x]
+        if arg.split(':'):
+            host = arg.split(':')[0]
+            if x == 0:
+                src = arg.split(':')[1]
+                mode = 'get'
+            else:
+                dest = arg.split(':')[1]
+                mode = 'put'
+        else:
+            if not os.path.exists(os.path.abspath(arg)):
+                parser.error(f"{arg} does not exist")
+            if x == 0:
+                src = os.path.abspath(arg)
+            else:
+                dest = arg.split(':')[1]
+        
     if options.debug and options.quiet:
         sys.stderr.write("The --debug and --quiet options are "
                          "mutually exclusive.\n")
         parser.print_help()
         sys.exit(1)
 
-    class Progress(object):
+    class Progress:
         def __init__(self, out):
             self.progress = 0
             self.out = out
 
         def progresshook(self, pkt):
-            if isinstance(pkt, tftpy.TftpPacketTypes.TftpPacketDAT):
+            from tftpy.packet.types import Data
+
+            if isinstance(pkt, Data):
                 self.progress += len(pkt.data)
-                self.out("Transferred %d bytes" % self.progress)
-            elif isinstance(pkt, tftpy.TftpPacketTypes.TftpPacketOACK):
-                self.out("Received OACK, options are: %s" % pkt.options)
+                self.out(f"Transferred {self.progress} bytes")
         
     if options.debug:
         log.setLevel(logging.DEBUG)
@@ -109,22 +120,18 @@ def main():
     if options.tsize:
         tftp_options['tsize'] = 0
 
-    tclient = tftpy.TftpClient(options.host,
+    tclient = tftpy.TftpClient(host,
                                int(options.port),
                                tftp_options,
                                options.localip)
     try:
-        if options.download:
-            if not options.output:
-                options.output = os.path.basename(options.download)
-            tclient.download(options.download,
-                             options.output,
+        if mode == 'get':
+            tclient.download(src,
+                             dest,
                              progresshook)
-        elif options.upload:
-            if not options.input:
-                options.input = os.path.basename(options.upload)
-            tclient.upload(options.upload,
-                           options.input,
+        elif mode == 'put':
+            tclient.upload(src,
+                           dest,
                            progresshook)
     except tftpy.TftpException as err:
         sys.stderr.write("%s\n" % str(err))

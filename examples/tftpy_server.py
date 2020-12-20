@@ -22,7 +22,7 @@ def main():
     parser.add_option('-i',
                       '--ip',
                       type='string',
-                      help='ip address to bind to (default: INADDR_ANY)',
+                      help='ip address to bind to (default: 127.0.0.1)',
                       default="")
     parser.add_option('-p',
                       '--port',
@@ -58,9 +58,11 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    server = tftpy.TftpServer(options.root)
+    server = tftpy.TftpServer(tftproot=options.root,
+                              listenip=options.ip,
+                              listenport=options.port)
     try:
-        server.listen(options.ip, options.port)
+        server.listen()
     except tftpy.TftpException as err:
         sys.stderr.write("%s\n" % str(err))
         sys.exit(1)
