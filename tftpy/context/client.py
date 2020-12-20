@@ -3,7 +3,7 @@ import os
 import sys
 import time
 
-from .base import Context
+from .base import Client
 from tftpy.shared import TIMEOUT_RETRIES
 from tftpy.packet import types
 from tftpy.exceptions import TftpException,TftpTimeout,TftpFileNotFoundError
@@ -11,7 +11,7 @@ from tftpy.states import SentReadRQ,SentWriteRQ
 
 logger = logging.getLogger('tftpy.context.client')
 
-class Upload(Context):
+class Upload(Client):
     """The upload context for the client during an upload.
     Note: If input is a hyphen, then we will use stdin."""
     
@@ -71,7 +71,7 @@ class Upload(Context):
         self.metrics.compute()
         
 
-class Download(Context):
+class Download(Client):
     """The download context for the client during a download.
     Note: If output is a hyphen, then the output will be sent to stdout."""
     

@@ -23,9 +23,6 @@ class Context:
             localip (str, optional): Listen Address. Defaults to None.
         
         kwargs:
-            filename (str): Filename to send or receive
-            fileobj (class): File-like object supporting .read or .write
-            options (dict): Options for the session
             packethook (func): function to receive a copy of the Data Packet
             mode (str): Server mode currently only supports 'octet'
         
@@ -33,9 +30,6 @@ class Context:
             ValueError: invalid port number
         """
         
-        self.file_to_transfer = kwargs.get('filename', None)
-        self.fileobj = kwargs.get('fileobj', None)
-        self.options = kwargs.get('options', {})
         self.packethook = kwargs.get('packethook', None)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.mode = kwargs.get('mode', "octet")
@@ -218,3 +212,18 @@ class Context:
             self.next_block += 1
             
         self.last_pkt = pkt
+
+
+class Client(Context):
+    """ Client specific Context class to handle variabled that
+    use by both the client and the server contexts
+    
+    kwargs:
+        filename (str): Filename to send or receive
+        options (dict): Options for the session
+    """
+
+    def __init__(self,*args,**kwargs):
+        self.file_to_transfer = kwargs.get('filename', None)
+        self.options = kwargs.get('options', {})
+        super().__init__(*args, **kwargs)
