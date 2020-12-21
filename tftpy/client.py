@@ -19,10 +19,10 @@ class TftpClient:
     download can be initiated via the download() method, or an upload via the
     upload() method."""
 
-    def __init__(self, host, port=69, options=None, localip = None):
+    def __init__(self, host, port=None, options=None, localip=None):
         self.context = None
         self.host = host
-        self.iport = port
+        self.iport = port or 69
         self.filename = None
         self.options = options or {}
         self.localip = localip or ""
