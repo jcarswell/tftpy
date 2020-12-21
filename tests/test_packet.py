@@ -120,7 +120,7 @@ class TestTftpyClasses(unittest.TestCase):
             3: types.Data,
             4: types.Ack,
             5: types.Error,
-            6: types.OptionACK
+            6: types.OptionAck
             }
         packet_factory = factory.PacketFactory()
         for opcode in classes:

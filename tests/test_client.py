@@ -10,27 +10,24 @@ from tftpy import shared
 #        os.fork()
 #        signal - alarms are only supported on Unix
 
+base = os.path.dirname(os.path.abspath(__file__))
+
 class TestTftpyClient(unittest.TestCase):
 
-    def client_upload(self,
-                      options,
-                      input=None,
-                      transmitname=None,
-                      server_kwargs=None):
+    def client_upload(self, options, input=None, transmitname=None, server_kwargs=None):
         """Fire up a client and a server and do an upload."""
+        
         root = '/tmp'
-        home = os.path.dirname(os.path.abspath(__file__))
         filename = '640KBFILE'
-        input_path = os.path.join(home, filename)
+        input_path = os.path.join(base, filename)
+        
         if not input:
             input = input_path
         if transmitname:
             filename = transmitname
         server_kwargs = server_kwargs or {}
-        server = tftpy.TftpServer(root, **server_kwargs)
-        client = tftpy.TftpClient('localhost',
-                                  20001,
-                                  options)
+        server = tftpy.TftpServer(root, 'localhost', 20001, **server_kwargs)
+        client = tftpy.TftpClient('localhost', 20001, options)
 
         # Fork a server and run the client in this process.
         child_pid = os.fork()
@@ -38,30 +35,29 @@ class TestTftpyClient(unittest.TestCase):
             # parent - let the server start
             try:
                 time.sleep(1)
-                client.upload(filename,
-                              input)
+                client.upload(filename, input)
             finally:
                 os.kill(child_pid, 15)
                 os.waitpid(child_pid, 0)
 
         else:
             server.listen()
+            
+        if os.path.exists(os.path.join(root,filename)):
+            os.remove(os.path.join(root,filename))
 
     def client_download(self, options, output='/tmp/out'):
         """Fire up a client and a server and do a download."""
-        root = os.path.dirname(os.path.abspath(__file__))
-        server = tftpy.TftpServer(root)
-        client = tftpy.TftpClient('localhost',
-                                  20001,
-                                  options)
+        server = tftpy.TftpServer(base, 'localhost', 20001)
+        client = tftpy.TftpClient('localhost', 20001, options)
+        
         # Fork a server and run the client in this process.
         child_pid = os.fork()
         if child_pid:
             # parent - let the server start
             try:
                 time.sleep(1)
-                client.download('640KBFILE',
-                                output)
+                client.download('640KBFILE', output)
             finally:
                 os.kill(child_pid, 15)
                 os.waitpid(child_pid, 0)
@@ -69,16 +65,18 @@ class TestTftpyClient(unittest.TestCase):
         else:
             server.listen()
 
-    def test_upload_func(self, return_func):
-        q = Queue()
+        try:
+            os.remove(output)
+        except Exception:
+            pass
 
-        def upload_open(path, context):
-            q.put('called')
-            return return_func(path)
-        self.client_upload(
-            {},
-            server_kwargs={'upload_open': upload_open})
-        self.assertEqual(q.get(True, 1), 'called')
+    class file_like_class:
+        def write(self,*args,**kwargs):
+            pass
+        def read(self,*args,**kwargs):
+            return 'test123'
+        def close(self):
+            pass
 
     def test_download_no_options(self):
         self.client_download({})
@@ -94,11 +92,15 @@ class TestTftpyClient(unittest.TestCase):
         for blksize in [512, 1024, 2048, 4096]:
             self.client_download({'blksize': blksize})
 
+    def test_download_custom_open(self):
+        test_file = self.file_like_class()
+        self.client_download({}, test_file)
+
     def test_upload_no_option(self):
         self.client_upload({})
 
     def test_upload_fd(self):
-        fileobj = open('t/640KBFILE', 'rb')
+        fileobj = open('tests/640KBFILE', 'rb')
         self.client_upload({}, input=fileobj)
 
     def test_upload_path_with_subdirs(self):
@@ -112,11 +114,24 @@ class TestTftpyClient(unittest.TestCase):
             self.client_upload({'blksize': blksize})
 
     def test_upload_custom_open(self):
-        self.client_upload(lambda p: open(p, 'wb'))
+        test_file = self.file_like_class()
+        self.client_upload({}, test_file)
 
     def test_upload_custom_open_forbidden(self):
-        with self.assertRaisesRegexp(tftpy.TftpException, 'Access violation'):
-            self.test_upload_func(lambda p: None)
+
+        def test_upload_func(self, return_func):
+            q = Queue()
+
+            def upload_open(path, context):
+                q.put('called')
+                return return_func(path)
+            self.client_upload(
+                {},
+                server_kwargs={'upload_open': upload_open})
+            self.assertEqual(q.get(True, 1), 'called')
+
+        with self.assertRaisesRegex(tftpy.TftpException, 'Access violation'):
+            test_upload_func(self, lambda p: None)
 
     def testClientServerUploadTsize(self):
         self.client_upload({'tsize': 64*1024}, transmitname='/foo/bar/640KBFILE')

@@ -10,21 +10,26 @@ from tftpy import states
 from tftpy.exceptions import TftpException,TftpTimeout
 from tftpy.shared import SOCK_TIMEOUT
 
+base = os.path.dirname(os.path.abspath(__file__))
+
 class TestTftpyState(unittest.TestCase):
     
     def test_context_client_upload(self):
-        client = context.Upload('localhost',20001,SOCK_TIMEOUT,'tests/640KBFILE')
+        client = context.Upload('localhost',20001,SOCK_TIMEOUT,os.path.join(base,'640KBFILE'),filename='test_context_client_upload')
         self.assertIsInstance(client.fileobj,IOBase)
         self.assertRaises(TftpTimeout,client.start)
         self.assertIsInstance(client.state,states.SentWriteRQ)
         client.end()
 
     def test_context_client_download(self):
-        client = context.Download('localhost',20001,SOCK_TIMEOUT,'test_context_client_download')
+        client = context.Download('localhost',20001,SOCK_TIMEOUT,'test_context_client_download',filename='test_context_client_upload')
         self.assertIsInstance(client.fileobj,IOBase)
         self.assertRaises(TftpTimeout,client.start)
         self.assertIsInstance(client.state,states.SentReadRQ)
         client.end()
+
+        if os.path.exists('../test_context_client_download'):
+            os.remove('../test_context_client_download')
 
     def test_context_server_noopt(self):
         raddress = '127.0.0.2'
@@ -64,7 +69,7 @@ class TestTftpyState(unittest.TestCase):
         timeout = 5
         root = os.path.dirname(os.path.abspath(__file__))
         serverstate = context.Server(raddress,rport,timeout,root)
-       
+
         self.assertIsInstance(serverstate,context.Server)
 
         rrq = types.ReadRQ()
@@ -82,7 +87,7 @@ class TestTftpyState(unittest.TestCase):
         timeout = 5
         root = os.path.dirname(os.path.abspath(__file__))
         serverstate = context.Server(raddress,rport,timeout,root)
-       
+
         self.assertIsInstance(serverstate,context.Server)
 
         rrq = types.ReadRQ()

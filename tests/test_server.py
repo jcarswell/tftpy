@@ -5,6 +5,7 @@ import time
 import threading
 
 import tftpy
+from tftpy.exceptions import TftpTimeout
 
 # FIXME: Tests are not suppported on Windows/Cygwin
 #        os.fork()
@@ -13,14 +14,14 @@ import tftpy
 class TestTftpyServer(unittest.TestCase):
     def test_server_download_stop_now(self, output='/tmp/out'):
         root = os.path.dirname(os.path.abspath(__file__))
-        server = tftpy.TftpServer(root)
+        server = tftpy.TftpServer(root,listenip='localhost',listenport=20001)
         client = tftpy.TftpClient('localhost',
                                   20001,
                                   {})
         # Fork a server and run the client in this process.
         child_pid = os.fork()
         if child_pid:
-            with self.assertRaises(tftpy.TftpException, msg="Server should not exit early"):
+            with self.assertRaises(TftpTimeout):
                 time.sleep(1)
                 def delay_hook(pkt):
                     time.sleep(0.005) # 5ms
@@ -35,7 +36,7 @@ class TestTftpyServer(unittest.TestCase):
                 server.stop(now=True)
             signal.signal(signal.SIGALRM, handlealarm)
             signal.alarm(2)
-            self.assertRaises(tftpy.TftpException, server.listen, 'localhost', 20001, msg="Got an unexpected exception")
+            server.listen()
 
             # Wait until parent kills us
             while True:
@@ -43,18 +44,17 @@ class TestTftpyServer(unittest.TestCase):
 
     def test_server_download_stop(self, output='/tmp/out'):
         root = os.path.dirname(os.path.abspath(__file__))
-        server = tftpy.TftpServer(root)
+        server = tftpy.TftpServer(root, 'localhost', 20001)
         client = tftpy.TftpClient('localhost',
                                   20001,
                                   {})
         # Fork a server and run the client in this process.
         child_pid = os.fork()
         if child_pid:
-            with self.assertRaises(tftpy.TftpException, msg="Server should not exit early"):
-                time.sleep(1)
-                def delay_hook(pkt):
-                    time.sleep(0.005) # 5ms
-                client.download('640KBFILE', output, delay_hook)
+            time.sleep(1)
+            def delay_hook(pkt):
+                time.sleep(0.005) # 5ms
+            client.download('640KBFILE', output, delay_hook)
 
             os.kill(child_pid, 15)
             os.waitpid(child_pid, 0)
@@ -65,7 +65,7 @@ class TestTftpyServer(unittest.TestCase):
                 server.stop(now=False)
             signal.signal(signal.SIGALRM, handlealarm)
             signal.alarm(2)
-            self.assertRaises(tftpy.TftpException, server.listen, 'localhost', 20001, msg="Got an unexpected exception")
+            server.listen()
             # Wait until parent kills us
             while True:
                 time.sleep(1)
@@ -73,10 +73,9 @@ class TestTftpyServer(unittest.TestCase):
     def test_server_download_dynamic_port(self, output='/tmp/out'):
         root = os.path.dirname(os.path.abspath(__file__))
 
-        server = tftpy.TftpServer(root)
-        server_thread = threading.Thread(target=server.listen,
-                                         kwargs={'listenip': 'localhost',
-                                                 'listenport': 0})
+        server = tftpy.TftpServer(root, 'localhost', 0)
+        print(server.listen)
+        server_thread = threading.Thread(target=server.listen)
         server_thread.start()
 
         try:
