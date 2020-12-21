@@ -79,8 +79,10 @@ class Context:
         """Simple destructor to try to call housekeeping in the end method if
         not called explicitely. Leaking file descriptors is not a good
         thing."""
-        
-        self.end()
+        try:
+            self.end()
+        except Exception:
+            pass
 
     def check_timeout(self, now):
         """Compare current time with last_update time, and raise an exception
