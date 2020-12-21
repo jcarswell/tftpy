@@ -51,7 +51,7 @@ class SentWriteRQ(TftpState):
 
         elif isinstance(pkt, types.Error):
             self.send_error(TftpErrors.ILLEGALTFTPOP)
-            raise TftpOptionsError("Received ERR from server: {pkt}")
+            raise TftpOptionsError(f"Received ERR from server: {pkt}")
 
         elif isinstance(pkt, types.ReadRQ):
             self.send_error(TftpErrors.ILLEGALTFTPOP)
