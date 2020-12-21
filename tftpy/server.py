@@ -34,7 +34,7 @@ class TftpServer:
     requested destination path and server context. It must either return a
     file-like object ready for writing or None if the path is invalid."""
 
-    def __init__(self, tftproot=None, dyn_file_func=None, upload_open=None, listenip=None, listenport=None):
+    def __init__(self, tftproot=None, listenip=None, listenport=None, dyn_file_func=None, upload_open=None):
 
         self.listenip = listenip or '127.0.0.1'
         self.listenport = listenport or 69
@@ -54,7 +54,7 @@ class TftpServer:
         self.shutdown_gracefully = False
         self.shutdown_immediately = False
 
-        for name in 'dyn_file_func', 'upload_open':
+        for name in ['dyn_file_func','upload_open']:
             attr = getattr(self, name)
             if attr and not callable(attr):
                 raise TftpException(f"{name} supplied, but it is not callable.")
