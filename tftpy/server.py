@@ -215,7 +215,7 @@ class TftpServer:
                     self.sessions[key].start(buffer)
                 except TftpException as err:
                     deletion_list.append(key)
-                    logger.error("Fatal exception thrown from session {key}: {str(err)}")
+                    logger.error(f"Fatal exception thrown from session {key}: {str(err)}")
             
             else:
                 logger.warning("received traffic on main socket for existing session?")
