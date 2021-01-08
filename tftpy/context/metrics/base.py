@@ -7,14 +7,14 @@ logger = logging.getLogger('tftpy.context.metrics.base')
 class Metrics:
     """A class representing metrics of the transfer."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         # Bytes transferred
         self.bytes = 0
         # Bytes re-sent
         self.resent_bytes = 0
         # Duplicate packets received
-        self.dups = {}
         self.dupcount = 0
+        self.dups = {}
         # Times
         self.start_time = 0
         self.end_time = 0
@@ -24,9 +24,17 @@ class Metrics:
         self.kbps = 0
         # Generic errors
         self.errors = 0
+        self.__out_of_order = []
 
-    def compute(self):
-        # Compute transfer time
+    def compute(self) -> None:
+        """Compute transfer time
+           
+           Sets:
+               duration: Time taken for the transfer
+               bps: Speed in bytes per seconds
+               kbps: Speed in kbps
+               ooocount: number of out of order packets received
+        """
         
         self.duration = self.end_time - self.start_time
         
@@ -38,18 +46,49 @@ class Metrics:
         self.kbps = self.bps / 1024.0
         logger.debug(f"TftpMetrics.compute: kbps is {self.kbps}")
         
-        for key in self.dups:
-            self.dupcount += self.dups[key]
+        self.ooocount = len(self.__out_of_order)
 
-    def add_dup(self, pkt):
-        """This method adds a dup for a packet to the metrics."""
+    def add_dup(self, pkt: 'types.Data') -> None:
+        """This method adds a dup for a packet to the metrics.
+
+        Args:
+            pkt (types.Data): Duplicate data packet
+            
+        Raises:
+            AssertionError: Max Duplicate packets received
+        """
         
         logger.debug("Recording a dup of {pkt}")
         s = str(pkt)
+        
+        self.dupcount += 1
         
         if s in self.dups:
             self.dups[s] += 1
         else:
             self.dups[s] = 1
         
-        tftpassert(self.dups[s] < MAX_DUPS, "Max duplicates reached")
+        tftpassert(self.dupcount < MAX_DUPS, "Max duplicates reached")
+
+    @property
+    def duplicate(self) -> None:
+        return self.dups
+
+    @duplicate.setter
+    def duplicate(self, pkt: 'types.Data') -> None:
+        self.add_dup(pkt)
+
+    @property
+    def out_of_order(self) -> list:
+        return self.__out_of_order
+
+    @out_of_order.setter
+    def out_of_order(self, pkt: 'packet.types') -> None:
+        logger.debug("Recording a out of order packet")
+        s = str(pkt)
+
+        if s in self.dups:
+            logger.debug("{pkt} is a duplicate packet")
+            self.duplicate = pkt
+
+        self.__out_of_order.append(s)
