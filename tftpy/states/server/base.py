@@ -1,28 +1,45 @@
 import logging
 import os
 
+from typing import Union
+
 from tftpy.states.base import TftpState
 from tftpy.exceptions import TftpException
 from tftpy.shared import TftpErrors,DEF_BLKSIZE
+from tftpy.packet import types
 
 logger = logging.getLogger()
 
 class TftpServerState(TftpState):
     """The base class for server states."""
 
-    def __init__(self, context):
+    def __init__(self, context: 'Server') -> None:
+        """Prepare the server state
+
+        Args:
+            context (Server): the server context
+        """
         super().__init__(context)
 
-        # This variable is used to store the absolute path to the file being
-        # managed.
-        self.full_path = None
+        self.full_path = None # Absolute path of the file being managed
 
-    def server_initial(self, pkt, raddress, rport):
+    def server_initial(self, pkt: Union[types.ReadRQ,types.WriteRQ],
+                       raddress: str, rport: int) -> bool:
         """This method performs initial setup for a server context transfer,
-        put here to refactor code out of the TftpStateServerRecvRRQ and
-        TftpStateServerRecvWRQ classes, since their initial setup is
-        identical. The method returns a boolean, sendoack, to indicate whether
-        it is required to send an OACK to the client."""
+        The method returns a boolean, sendoack, to indicate whether
+        it is required to send an OACK to the client.
+        
+        Args:
+            pkt (types.ReadRQ,types.WriteRQ): Packet Data
+            raddress (str): client address
+            rport (int): client port
+
+        Raises:
+            TftpException: When the requested file is outside of the servers root
+
+        Returns:
+            bool: Send OptionAck to client
+        """
         
         options = pkt.options
         sendoack = False
@@ -39,11 +56,9 @@ class TftpServerState(TftpState):
             self.context.options.update(supported_options)
             sendoack = True
 
-        # FIXME - only octet mode is supported at this time.
-        if pkt.mode != 'octet':
-            #self.sendError(TftpErrors.IllegalTftpOp)
-            #raise TftpException("Only octet transfers are supported at this time.")
-            logger.warning("Received non-octet mode request. I'll reply with binary data.")
+        if pkt.mode not in ['octet','netascii']:
+            self.send_error(TftpErrors.ILLEGALTFTPOP)
+            raise TftpException("Unsupported Trasport mode requested")
 
         # test host/port of client end
         if self.context.host != raddress or self.context.port != rport:
