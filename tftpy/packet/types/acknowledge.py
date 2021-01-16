@@ -1,6 +1,8 @@
 import logging
 import struct
 
+from typing import Any
+
 from .base import TftpPacket, TftpPacketInitial
 from tftpy.exceptions import TftpException
 from tftpy.shared import MIN_BLKSIZE, MAX_BLKSIZE
@@ -15,24 +17,38 @@ class Ack(TftpPacket):
     ACK   | 04    | Block # |
            -----------------
     """
-    def __init__(self):
+    
+    def __init__(self) -> None:
         super().__init__()
         self.opcode = 4
         self.blocknumber = 0
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"ACK packet: block {self.blocknumber}" 
 
-    def encode(self):
+    def encode(self) -> 'Ack':
+        """Encode acknowlegement packet for sending
+
+        Returns:
+            Ack: self
+        """
+
         logger.debug(f"encoding ACK: opcode = {self.opcode}, block = {self.blocknumber}")
         self.buffer = struct.pack(str("!HH"), self.opcode, self.blocknumber)
         return self
 
-    def decode(self):
+    def decode(self) -> 'Ack':
+        """Decode and acknowlegement packet
+
+        Returns:
+            Ack: self
+        """
+
         if len(self.buffer) > 4:
             logger.debug("detected TFTP ACK but request is too large, will truncate")
             logger.debug(f"buffer was: {repr(self.buffer)}")
             self.buffer = self.buffer[0:4]
+
         self.opcode, self.blocknumber = struct.unpack(str("!HH"), self.buffer)
         logger.debug(f"decoded ACK packet: opcode = {self.opcode}, block = {self.blocknumber}")
         return self
@@ -46,14 +62,20 @@ class OptionAck(TftpPacketInitial):
     +-------+---~~---+---+---~~---+---+---~~---+---+---~~---+---+
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.opcode = 6
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"OACK packet:\n    options = {self.options}"
 
-    def encode(self):
+    def encode(self) -> 'OptionAck':
+        """Encode option acknowlegement packet for sending
+        
+        Returns:
+            OptionAck: self
+        """
+
         fmt = b"!H" # opcode
         options_list = []
         logger.debug("in TftpPacketOACK.encode")
@@ -76,17 +98,32 @@ class OptionAck(TftpPacketInitial):
         self.buffer = struct.pack(fmt, self.opcode, *options_list)
         return self
 
-    def decode(self):
+    def decode(self) -> 'OptionAck':
+        """Decode an option acknowlegement packet
+
+        Returns:
+            OptionAck: self
+        """
+
         self.options = self.decode_options(self.buffer[2:])
         return self
 
-    def match_options(self, option, value):
-        """This method takes a set of options, and tries to match them with
-        its own. It can accept some changes in those options from the server as
-        part of a negotiation. Changed or unchanged, it will return a dict of
-        the options so that the session can update itself to the negotiated
-        options."""
+    def match_options(self, option: str, value: str) -> Any:
+        return self.validate_option(option,value)
+
+    def validate_option(self, option: str, value: str) -> Any:
+        """Validates all option recieved and convert string to integers for numbered options
+
+        Raises:
+            TftpException: Invalid Block size requested
+            TftpException: Negitive File size requested
+            TftpException: Unsupported Options
+
+        Returns:
+            str,int: parsed and valid value
+        """
         
+        option = option.lower()
         if option == 'blksize':
             # We can accept anything between the min and max values.
             value = int(value)
