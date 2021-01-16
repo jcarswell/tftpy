@@ -1,5 +1,7 @@
 import logging
 
+from typing import Union
+
 from tftpy.packet import types
 from tftpy.shared import TftpErrors,DEF_BLKSIZE
 from tftpy.states.base import TftpState,ExpectData
@@ -11,8 +13,18 @@ logger = logging.getLogger()
 class SentWriteRQ(TftpState):
     """Just sent an WRQ packet for an upload."""
 
-    def handle(self, pkt, raddress, rport):
-        """Handle a packet we just received."""
+    def handle(self, pkt: Union[types.OptionAck,types.Ack],
+               raddress: str, rport: int) -> 'SentWriteRQ':
+        """Handle a packet we just received.
+
+        Raises:
+            TftpOptionsError: Failure to negotiate options
+            TftpOptionsError: Received an Error packet
+            TftpOptionsError: Recieved an invalid packet type
+
+        Returns:
+            SentWriteRQ: Returns self if we received a valid packet
+        """
         
         if not self.context.tidport:
             self.context.tidport = rport
@@ -71,8 +83,20 @@ class SentWriteRQ(TftpState):
 class SentReadRQ(TftpState):
     """Just sent an RRQ packet."""
 
-    def handle(self, pkt, raddress, rport):
-        """Handle the packet in response to an RRQ to the server."""
+    def handle(self, pkt: Union[types.OptionAck,types.Data],
+               raddress: str, rport: int) -> 'SentReadRQ':
+        """Handle the packet in response to an RRQ to the server
+
+        Raises:
+            TftpOptionsError: Failure to negotiate options
+            TftpOptionsError: Received an Error Packet
+            TftpOptionsError: Received an Invalid packet type
+            TftpFileNotFoundError: Requested File not found
+            TftpException: Received an Invalid packet type
+
+        Returns:
+            [type]: [description]
+        """
         
         if not self.context.tidport:
             self.context.tidport = rport
@@ -87,7 +111,7 @@ class SentReadRQ(TftpState):
             except TftpException as err:
                 logger.error(f"Failed to negotiate options: {str(err)}")
                 self.send_error(TftpErrors.FAILEDNEGOTIATION)
-                raise TftpException("Failed to negotiate options", error_code=TftpErrors.FAILEDNEGOTIATION)
+                raise TftpOptionsError("Failed to negotiate options")
             else:
                 logger.debug("Sending ACK to OACK")
 
