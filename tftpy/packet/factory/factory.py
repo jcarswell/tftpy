@@ -1,10 +1,21 @@
 import logging
 import struct
 
+from typing import Union
+
 from tftpy.shared import tftpassert
 from tftpy.packet import types
 
 logger = logging.getLogger('tftpy.packet.factory')
+
+packet_type = Union[
+    types.ReadRQ,
+    types.WriteRQ,
+    types.OptionAck,
+    types.Ack,
+    types.Data,
+    types.Error
+]
 
 class PacketFactory:
     """This class generates TftpPacket objects. It is responsible for parsing
@@ -20,10 +31,16 @@ class PacketFactory:
         6: types.OptionAck
         }
 
-    def parse(self, buffer):
+    def parse(self, buffer: bytes) -> packet_type:
         """This method is used to parse an existing datagram into its
-        corresponding TftpPacket object. The buffer is the raw bytes off of
-        the network."""
+        corresponding TftpPacket object.
+
+        Args:
+            buffer (bytes): Packet Data
+
+        Returns:
+            types: packet type base on the opcode
+        """
 
         logger.debug(f"parsing a {len(buffer)} byte packet")
         (opcode,) = struct.unpack(str("!H"), buffer[:2])
@@ -32,10 +49,17 @@ class PacketFactory:
         packet.buffer = buffer
         return packet.decode()
 
-    def __create(self, opcode):
+    def __create(self, opcode: int) -> packet_type:
         """This method returns the appropriate class object corresponding to
-        the passed opcode."""
-        
+        the passed opcode.
+
+        Args:
+            opcode (int): The opcode from the buffer
+
+        Returns:
+            types: The Appropriate packet type class
+        """
+
         tftpassert(opcode in self._classes, f"Unsupported opcode: {opcode}")
         packet = self._classes[opcode]()
 
