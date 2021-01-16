@@ -11,15 +11,22 @@ class TftpPacketWithOptions:
     regarding options handling. It does not inherit from TftpPacket, as the
     goal is just to share code here, and not cause diamond inheritance."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.options = {}
 
     @property
-    def options(self):
+    def options(self) -> dict:
+        """Getter function for the option property"""
         return self._options
 
     @options.setter
-    def options(self, options):
+    def options(self, options: dict) -> None:
+        """Setter function for option property
+
+        Args:
+            options (dict): option names and values
+        """
+        
         logger.debug("in TftpPacketWithOptions.setoptions")
         logger.debug("options: %s", options)
         myoptions = {}
@@ -36,10 +43,20 @@ class TftpPacketWithOptions:
         logger.debug("setting options hash to: %s", myoptions)
         self._options = myoptions
 
-    def decode_options(self, buffer):
+    def decode_options(self, buffer: bytes) -> dict:
         """This method decodes the section of the buffer that contains an
         unknown number of options. It returns a dictionary of option names and
-        values."""
+        values.
+
+        Args:
+            buffer (bytes): packet data received on the socket
+
+        Raises:
+            TftpException: invalid option received
+
+        Returns:
+            dict: option names and values
+        """
         
         fmt = b"!"
         options = {}
@@ -80,16 +97,17 @@ class TftpPacketWithOptions:
 
         return options
 
+
 class TftpPacket:
     """This class is the parent class of all tftp packet classes. It is an
     abstract class, providing an interface, and should not be instantiated
     directly."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.opcode = 0
         self.buffer = None
 
-    def encode(self):
+    def encode(self) -> None:
         """The encode method of a TftpPacket takes keyword arguments specific
         to the type of packet, and packs an appropriate buffer in network-byte
         order suitable for sending over the wire.
@@ -97,7 +115,7 @@ class TftpPacket:
         This is an abstract method."""
         raise NotImplementedError
 
-    def decode(self):
+    def decode(self) -> None:
         """The decode method of a TftpPacket takes a buffer off of the wire in
         network-byte order, and decodes it, populating internal properties as
         appropriate. This can only be done once the first 2-byte opcode has
@@ -106,18 +124,26 @@ class TftpPacket:
 
         This is an abstract method."""
         raise NotImplementedError
-    
+
+
 class TftpPacketInitial(TftpPacket, TftpPacketWithOptions):
     """This class is a common parent class for the RRQ and WRQ packets, as
     they share quite a bit of code."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.filename = None
         self.mode = None
 
-    def encode(self):
-        """Encode the packet's buffer from the instance variables."""
+    def encode(self) -> 'TftpPacketInitial':
+        """Encode the packet's buffer from the instance variables.
+
+        Raises:
+            TftpException: Unsupported mode in the options
+
+        Returns:
+            TftpPacketInitial: self
+        """
         
         tftpassert(self.filename, "filename required in initial packet")
         tftpassert(self.mode, "mode required in initial packet")
@@ -145,6 +171,8 @@ class TftpPacketInitial(TftpPacket, TftpPacketWithOptions):
         
         if mode == b"octet":
             fmt += b"5sx"
+        elif mode == b"netascii":
+            fmt += b"8sx"
         else:
             raise TftpException(f"Unsupported mode: {mode}")
         
@@ -182,14 +210,23 @@ class TftpPacketInitial(TftpPacket, TftpPacketWithOptions):
         logger.debug("buffer is %s", repr(self.buffer))
         return self
 
-    def decode(self):
+    def decode(self) -> 'TftpPacketInitial':
+        """Decode the buffer
+
+        Returns:
+            TftpPacketInitial: self
+        """
         tftpassert(self.buffer, "Can't decode, buffer is empty")
 
         nulls = 0
         fmt = b""
-        nulls = length = tlength = 0
+        length = 0
+        tlength = 0
+        
         logger.debug("in decode: about to iterate buffer counting nulls")
+        
         subbuf = self.buffer[2:]
+        
         for i in range(len(subbuf)):
             if ord(subbuf[i:i+1]) == 0:
                 nulls += 1
@@ -202,7 +239,7 @@ class TftpPacketInitial(TftpPacket, TftpPacketWithOptions):
             length += 1
             tlength += 1
 
-        logger.debug("fhopefully found end of mode at length {length}")
+        logger.debug(f"hopefully found end of mode at length {length}")
         # length should now be the end of the mode.
         tftpassert(nulls == 2, "malformed packet")
         shortbuf = subbuf[:tlength+1]
