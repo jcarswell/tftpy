@@ -30,11 +30,11 @@ class Error(TftpPacket):
     7         No such user.
     8         Failed to negotiate options
     """
-    def __init__(self):
+
+    def __init__(self, errorcode: int = None) -> None:
         super().__init__()
         self.opcode = 5
-        self.errorcode = 0
-        # FIXME: We don't encode the errmsg...
+        self.errorcode = errorcode
         self.errmsg = None
         self.errmsgs = {
             1: b"File not found",
@@ -47,14 +47,18 @@ class Error(TftpPacket):
             8: b"Failed to negotiate options"
             }
 
-    def __str__(self):
+    def __str__(self) -> str:
         s = f"ERR packet: errorcode = {self.errorcode}"
         s += f"\n    msg = {self.errmsgs.get(self.errorcode,'')}"
+
         return s
 
-    def encode(self):
-        """Encode the DAT packet based on instance variables, populating
-        self.buffer, returning self."""
+    def encode(self) -> 'Error':
+        """Encode the Error packet based on opcode and errorcode.
+
+        Returns:
+            Error: self
+        """
         
         fmt = b"!HH%dsx" % len(self.errmsgs[self.errorcode])
         logger.debug(f"encoding ERR packet with fmt {fmt}")
@@ -62,22 +66,27 @@ class Error(TftpPacket):
                                   self.opcode,
                                   self.errorcode,
                                   self.errmsgs[self.errorcode])
+
         return self
 
-    def decode(self):
-        "Decode self.buffer, populating instance variables and return self."
-        
+    def decode(self) -> 'Error':
+        """Decode Error packet
+
+        Returns:
+            Error: self
+        """
+
         buflen = len(self.buffer)
         tftpassert(buflen >= 4, "malformed ERR packet, too short")
         logger.debug(f"Decoding ERR packet, length {buflen} bytes")
-        
+
         if buflen == 4:
             logger.debug("Allowing this affront to the RFC of a 4-byte packet")
             fmt = b"!HH"
             logger.debug(f"Decoding ERR packet with fmt: {fmt}")
             self.opcode, self.errorcode = struct.unpack(fmt,
                                                         self.buffer)
-        
+
         else:
             logger.debug("Good ERR packet > 4 bytes")
             fmt = b"!HH%dsx" % (len(self.buffer) - 5)
