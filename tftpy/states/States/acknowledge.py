@@ -1,5 +1,7 @@
 import logging
 
+from typing import Union
+
 from tftpy.states.base import TftpState
 from tftpy.exceptions import TftpException
 from tftpy.packet import types
@@ -12,8 +14,15 @@ class ExpectAck(TftpState):
     same one used by the client during the upload, and the server during the
     download."""
 
-    def handle(self, pkt, raddress, rport):
-        "Handle a packet, hopefully an ACK since we just sent a DAT."
+    def handle(self, pkt: types.Ack, raddress: str, rport: int) -> Union['ExpectAck',None]:
+        """Handle a packet, hopefully an ACK. If we get an Ack then send the next data packet.
+
+        Raises:
+            TftpException: Received an Error packet
+
+        Returns:
+            ['ExpectAck',None]: Returns ExpectAck unless we're finished sending data
+        """
         
         if isinstance(pkt, types.Ack):
             logger.debug(f"Received ACK for packet {pkt.blocknumber}")
