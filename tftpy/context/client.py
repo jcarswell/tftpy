@@ -3,6 +3,9 @@ import os
 import sys
 import time
 
+from typing import Union
+from io import IOBase
+
 from .base import Client
 from tftpy.shared import TIMEOUT_RETRIES
 from tftpy.packet import types
@@ -15,7 +18,19 @@ class Upload(Client):
     """The upload context for the client during an upload.
     Note: If input is a hyphen, then we will use stdin."""
     
-    def __init__(self, host, port, timeout, input, **kwargs):
+    def __init__(self, host: str, port: int, timeout: int, 
+                 input: Union[IOBase,str], **kwargs) -> None:
+        """Upload context for uploading data to a server.
+
+        Args:
+            host (str): Server Address
+            port (int): Server Port
+            timeout (int): socket timeout
+            input ([IOBase,str]): Input data, can be one of
+                - An open file object
+                - A path to a file
+                - a '-' indicating read from STDIN
+        """
                      
         super().__init__(host, port, timeout, **kwargs)
         
@@ -30,7 +45,9 @@ class Upload(Client):
         logger.debug("tftpy.context.client.upload.__init__()")
         logger.debug(f" file_to_transfer = {self.file_to_transfer}, options = {self.options}")
 
-    def start(self):
+    def start(self) -> None:
+        """Main loop to read data in and send file to the server."""
+        
         logger.info(f"Sending tftp upload request to {self.host}")
         logger.info(f"    filename -> {self.file_to_transfer}")
         logger.info(f"    options -> {self.options}")
@@ -64,7 +81,7 @@ class Upload(Client):
     def end(self, *args):
         """Finish up the context."""
         
-        super().end(*args)
+        super().end()
 
         self.metrics.end_time = time.time()
         logger.debug(f"Set metrics.end_time to {self.metrics.end_time}")
@@ -75,7 +92,24 @@ class Download(Client):
     """The download context for the client during a download.
     Note: If output is a hyphen, then the output will be sent to stdout."""
     
-    def __init__(self, host, port, timeout, output, **kwargs):
+    def __init__(self, host: str, port: int, timeout: int,
+                 output: Union[IOBase,str], **kwargs) -> None:
+        """Initalize the Download context with the server and
+           where to save the data
+
+        Args:
+            host (str): Server Address
+            port (int): Server port
+            timeout (int): Socket Timeout
+            output (Union[IOBase,str]): Output data, can be one of
+                - An open file object
+                - A path to a file
+                - '-' indicating write to STDOUT
+
+        Raises:
+            TftpException: unable to open the destiation file for writing
+        """
+        
         super().__init__(host, port, timeout, **kwargs)
         
         self.filelike_fileobj = False
@@ -97,8 +131,13 @@ class Download(Client):
         logger.debug("tftpy.context.client.Download.__init__()")
         logger.debug(f" file_to_transfer = {self.file_to_transfer}, options = {self.options}")
 
-    def start(self):
-        """Initiate the download."""
+    def start(self) -> None:
+        """Initiate the download.
+
+        Raises:
+            TftpTimeout: Failed to connect to the server
+            TftpFileNotFoundError: Recieved a File not fount error
+        """
         
         logger.info(f"Sending tftp download request to {self.host}")
         logger.info(f"    filename -> {self.file_to_transfer}")
@@ -142,7 +181,7 @@ class Download(Client):
 
                 raise TftpFileNotFoundError(err)
 
-    def end(self):
+    def end(self) -> None:
         """Finish up the context."""
         
         super().end(not self.filelike_fileobj)
