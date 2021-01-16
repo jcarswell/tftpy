@@ -1,6 +1,8 @@
 import logging
 import os
 
+from typing import Union
+
 from tftpy.states.base import TftpState,ExpectData
 from .base import TftpServerState
 from tftpy.exceptions import TftpException,TftpOptionsError,TftpFileNotFoundError
@@ -14,10 +16,22 @@ class ReceiveReadRQ(TftpServerState):
     """This class represents the state of the TFTP server when it has just
     received an RRQ packet."""
     
-    def handle(self, pkt, raddress, rport):
-        "Handle an initial RRQ packet as a server."
+    def handle(self, pkt: types.ReadRQ, raddress: str, rport: int) -> ExpectAck:
+        """Handle an initial RRQ packet as a server.
+
+        Args:
+            pkt (types.ReadRQ): Packet Data
+            raddress (str): Remote Addres
+            rport (int): Remote Port
+
+        Raises:
+            TftpFileNotFoundError: When the requested file is not found or the dyn_file_func returns None
+
+        Returns:
+            ExpectAck: Next context state
+        """
         
-        logger.debug("In TftpStateServerRecvRRQ.handle")
+        logger.debug("In tftpy.states.server.ReceiveReadRQ.handle")
         
         sendoack = self.server_initial(pkt, raddress, rport)
         logger.info(f"Opening file {self.full_path} for reading")
@@ -28,7 +42,7 @@ class ReceiveReadRQ(TftpServerState):
             self.context.fileobj = open(self.full_path, "rb")
 
         elif self.context.dyn_file_func:
-            logger.debug("No such file {self.full_path} but using dyn_file_func")
+            logger.debug(f"No such file {self.full_path} but using dyn_file_func")
             self.context.fileobj = self.context.dyn_file_func(self.context.file_to_transfer, 
                                                               raddress=raddress,
                                                               rport=rport)
@@ -75,9 +89,10 @@ class ReceiveWriteRQ(TftpServerState):
     """This class represents the state of the TFTP server when it has just
     received a WRQ packet."""
 
-    def make_subdirs(self):
+    def make_subdirs(self) -> None:
         """The purpose of this method is to, if necessary, create all of the
-        subdirectories leading up to the file to the written."""
+        subdirectories leading up to the file to the written.
+        """
 
         # Pull off everything below the root.
         subpath = self.full_path[len(self.context.root):]
@@ -95,10 +110,22 @@ class ReceiveWriteRQ(TftpServerState):
                 if not os.path.isdir(current):
                     os.mkdir(current, 0o700) # FIXME - This should be defined in the server startup
 
-    def handle(self, pkt, raddress, rport):
-        "Handle an initial WRQ packet as a server."
+    def handle(self, pkt: types.WriteRQ, raddress: str, rport: int) -> ExpectData:
+        """Handle an initial WRQ packet as a server.
 
-        logger.debug("In TftpStateServerRecvWRQ.handle")
+        Args:
+            pkt (types.WriteRQ): Packet Data
+            raddress (str): Remote Addres
+            rport (int): Remote Port
+
+        Raises:
+            TftpException: Invalid File Path requested
+
+        Returns:
+            context.ExpectAck: Next context state
+        """
+
+        logger.debug("In tftpy.states.server.ReceiveWriteRQ.handle")
         
         sendoack = self.server_initial(pkt, raddress, rport)
         
@@ -128,9 +155,8 @@ class ReceiveWriteRQ(TftpServerState):
             logger.debug("No requested options, expecting transfer to begin...")
             self.send_ack()
 
-        # Whether we're sending an oack or not, we're expecting a DAT for
-        # block 1
         self.context.next_block = 1
+        
         # We may have sent an OACK, but we're expecting a DAT as the response
         # to either the OACK or an ACK, so lets unconditionally use the
         # TftpStateExpectDAT state.
@@ -144,10 +170,25 @@ class Start(TftpState):
     this point we don't know if we're handling an upload or a download. We
     will commit to one of them once we interpret the initial packet."""
 
-    def handle(self, pkt, raddress, rport):
-        """Handle a packet we just received."""
+    def handle(self,
+               pkt: Union[types.ReadRQ,types.WriteRQ],
+               raddress: str, 
+               rport: int) -> Union[ReceiveWriteRQ,ReceiveReadRQ]:
+        """Handle a packet we just received.
+
+        Args:
+            pkt (Union[types.ReadRQ,types.WriteRQ]): Recieved Packet
+            raddress (str): Remote client address
+            rport (int): Remote client port
+
+        Raises:
+            TftpOptionsError: received an invalid packet for the expected state
+
+        Returns:
+            Union[ReceiveWriteRQ,ReceiveReadRQ]: Returns the next state
+        """
     
-        logger.debug("In TftpStateServerStart.handle")
+        logger.debug("In tftpy.states.Start.server.handle")
         
         if isinstance(pkt, types.ReadRQ):
             logger.debug("Handling an RRQ packet")
