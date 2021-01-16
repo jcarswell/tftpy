@@ -12,7 +12,7 @@ logger = logging.getLogger('tftpy.context.base')
 class Context:
     """The base class of the contexts."""
 
-    def __init__(self, host, port, timeout, **kwargs):
+    def __init__(self, host: str, port: int, timeout: int, **kwargs) -> None:
         """Constructor for the base context, setting shared instance
         variables.
 
@@ -84,7 +84,7 @@ class Context:
         except Exception:
             pass
 
-    def check_timeout(self, now):
+    def check_timeout(self, now: time.time) -> None:
         """Compare current time with last_update time, and raise an exception
         if we're over the timeout time.
 
@@ -102,7 +102,7 @@ class Context:
     def start(self):
         raise NotImplementedError
 
-    def end(self, close_fileobj=True):
+    def end(self, close_fileobj: bool = True):
         """Perform session cleanup, since the end method should always be
         called explicitely by the calling code, this works better than the
         destructor.
@@ -120,25 +120,25 @@ class Context:
             self.fileobj.close()
 
     @property
-    def host(self):
+    def host(self) -> str:
         "Get the host address or name"
         
         return self.__host
 
     @host.setter
-    def host(self, host):
+    def host(self, host: str) -> None:
         """Sets the address property as a result of the host that is set."""
         
         self.__host = host
         self.address = socket.gethostbyname(host)
 
     @property
-    def next_block(self):
+    def next_block(self) -> int:
         """Gets the next_block"""
         return self.__eblock
 
     @next_block.setter
-    def next_block(self, block):
+    def next_block(self, block: int) -> None:
         """Sets the next block or roles over if greater than 2^16 blocks"""
         
         if block >= 2 ** 16:
@@ -149,7 +149,7 @@ class Context:
     def __str__(self):
         return f"{self.host}:{self.port} {self.state}"
     
-    def cycle(self):
+    def cycle(self) -> None:
         """Here we wait for a response from the server after sending it
         something, and dispatch appropriate action to that response.
 
@@ -192,7 +192,7 @@ class Context:
         # zero.
         self.retry_count = 0
         
-    def send(self,pkt):
+    def send(self,pkt: 'packet.types.*') -> None:
         """Handles all the packet sending operations.
 
         Args:
@@ -217,15 +217,14 @@ class Context:
 
 
 class Client(Context):
-    """ Client specific Context class to handle variabled that
-    use by both the client and the server contexts
-    
-    kwargs:
-        filename (str): Filename to send or receive
-        options (dict): Options for the session
-    """
-
-    def __init__(self,*args,**kwargs):
+    def __init__(self,*args,**kwargs) -> None:
+        """ Client specific Context class to handle variabled that
+        use by both the client and the server contexts
+        
+        kwargs:
+            filename (str): Filename to send or receive
+            options (dict): Options for the session
+        """
         self.file_to_transfer = kwargs.get('filename', None)
         self.options = kwargs.get('options', {})
         super().__init__(*args, **kwargs)
