@@ -1,5 +1,7 @@
 import logging
 
+from typing import Union
+
 from tftpy.shared import tftpassert,TftpErrors,DELAY_BLOCK,MIN_BLKSIZE,MAX_BLKSIZE
 from tftpy.exceptions import TftpException,TftpOptionsError
 from tftpy.packet import types
@@ -7,25 +9,42 @@ from tftpy.shared import TftpErrors
 
 logger = logging.getLogger()
 
+packet_types = Union[
+    types.ReadRQ,
+    types.WriteRQ,
+    types.Ack,
+    types.OptionAck,
+    types.Data,
+    types.Error
+]
+
 class TftpState:
     """The base class for the states."""
 
-    def __init__(self, context):
+    def __init__(self, context: 'context class') -> None:
         """Constructor for setting up common instance variables. The involved
         file object is required, since in tftp there's always a file
         involved."""
         
         self.context = context
 
-    def handle(self, pkt, raddress, rport):
+    def handle(self, pkt: packet_types, raddress: str, rport: int):
         """An abstract method for handling a packet. It is expected to return
         a TftpState object, either itself or a new state."""
         
         raise NotImplementedError
 
-    def handle_oack(self, pkt):
+    def handle_oack(self, pkt: packet_types) -> None:
         """This method handles an OACK from the server, syncing any accepted
-        options."""
+        options.
+
+        Args:
+            pkt (packet_types): recieved packet from the remote host
+
+        Raises:
+            TftpException: if not options recieved
+        """
+        
         if len(pkt.options.keys()) > 0:
             try:
                 for k,v in pkt.options.items():
@@ -37,9 +56,16 @@ class TftpState:
         else:
             raise TftpException("No options found in OACK")
 
-    def return_supported_options(self, options):
+    def return_supported_options(self, options: dict) -> dict:
         """This method takes a requested options list from a client, and
-        returns the ones that are supported."""
+        returns the ones that are supported.
+
+        Args:
+            options (dict): list of options from the remote host
+
+        Returns:
+            dict: parsed valid options
+        """
         
         # We support the options blksize and tsize right now.
         
@@ -47,36 +73,38 @@ class TftpState:
         
         for k,v in options.items():
             k = k.lower()
-            if k == 'blksize':
-                # Make sure it's valid.
-                if int(v) > MAX_BLKSIZE:
-                    logger.info(f"Client requested blksize greater than {MAX_BLKSIZE} setting to maximum")
-                    v = MAX_BLKSIZE
-                elif int(v) < MIN_BLKSIZE:
-                    logger.info(f"Client requested blksize less than {MIN_BLKSIZE} setting to minimum") 
-                    v = MIN_BLKSIZE
-                else:
-                    v = int(v)
-            elif k == 'tsize':
-                if int(v) < 0:
-                    logger.info("Client requested a tsize less that 0, setting to 0")
-                    v = 0
-                else:
-                    v = int(v)
+            if k == 'blksize' AND int(v) > MAX_BLKSIZE:
+                logger.info(f"Client requested blksize greater than {MAX_BLKSIZE} setting to maximum")
+                v = MAX_BLKSIZE
+
+            elif k == 'blksize' AND int(v) < MIN_BLKSIZE:
+                logger.info(f"Client requested blksize less than {MIN_BLKSIZE} setting to minimum") 
+                v = MIN_BLKSIZE
+
+            elif k == 'tsize' and int(v) < 0:
+                logger.info("Client requested a tsize less that 0, setting to 0")
+                v = 0
+
+            elif k in ['blksize','tsize']:
+                v = int(v)
+
             else:
                 logger.info(f"Dropping unsupported option: {k}")
                 v = None
-                
+
             if v is not None:
                 logger.debug(f"setting option {k} to {v}")
                 accepted_options[k] = v
-        
+
         return accepted_options
 
-    def send_dat(self):
+    def send_dat(self) -> bool:
         """This method sends the next DAT packet based on the data in the
-        context. It returns a boolean indicating whether the transfer is
-        finished."""
+        context.
+
+        Returns:
+            bool: Indicates whether the transfer is finished
+        """
         
         finished = False
         blocknumber = self.context.next_block
@@ -111,10 +139,14 @@ class TftpState:
         
         return finished
 
-    def send_ack(self, blocknumber=None):
+    def send_ack(self, blocknumber: int = None) -> None:
         """This method sends an ack packet to the block number specified. If
         none is specified, it defaults to the next_block property in the
-        parent context."""
+        parent context.
+
+        Args:
+            blocknumber (int, optional): Block number to acknowledge
+        """
         
         logger.debug(f"In send_ack, passed blocknumber is {blocknumber}")
         if blocknumber is None:
@@ -128,9 +160,14 @@ class TftpState:
                                   self.context.tidport))
         self.context.last_pkt = ackpkt
 
-    def send_error(self, errorcode):
+    def send_error(self, errorcode: int) -> None:
         """This method uses the socket passed, and uses the errorcode to
-        compose and send an error packet."""
+        compose and send an error packet.
+
+        Args:
+            errorcode (int): The error code to respond with. Details can be found in
+            shared.TftpErrors
+        """
         
         logger.debug(f"In send_error, being asked to send error {errorcode}")
         errpkt = types.Error()
@@ -145,7 +182,7 @@ class TftpState:
 
         self.context.last_pkt = errpkt
 
-    def send_oack(self):
+    def send_oack(self) -> None:
         """This method sends an OACK packet with the options from the current
         context."""
         
@@ -158,8 +195,8 @@ class TftpState:
 
         self.context.last_pkt = pkt
 
-    def resend_last(self):
-        "Resend the last sent packet due to a timeout."
+    def resend_last(self) -> None:
+        """Resend the last sent packet due to a timeout."""
         
         logger.warning(f"Resending packet {self.context.last_pkt} on sessions {self}")
         self.context.metrics.resent_bytes += len(self.context.last_pkt.buffer)
@@ -178,10 +215,20 @@ class TftpState:
         if self.context.packethook:
             self.context.packethook(self.context.last_pkt)
 
-    def handle_dat(self, pkt):
+    def handle_dat(self, pkt: types.Data) -> Union[ExpectData,None]:
         """This method handles a DAT packet during a client download, or a
-        server upload."""
+        server upload.
 
+        Args:
+            pkt (types.Data): Data packet to Decode
+
+        Raises:
+            TftpException: Received a data packet with block 0
+            TftpException: [description]
+
+        Returns:
+            [ExpectData,None]: [description]
+        """
         logger.info(f"Handling DAT packet - block {pkt.blocknumber}")
         logger.debug(f"Expecting block {self.context.next_block}")
 
@@ -213,20 +260,28 @@ class TftpState:
             self.send_ack(pkt.blocknumber)
 
         else:
-            # FIXME: should we be more tolerant and just discard instead?
-            msg = f"Whoa! Received future block {pkt.blocknumber} but expected {self.context.next_block}"
-            logger.error(msg)
-            raise TftpException(msg)
+            logger.warning(f"Whoa! Received future block {pkt.blocknumber} but expected {self.context.next_block}")
+            self.context.metrics.out_of_order(pkt)
 
         # Default is to ack
         return ExpectData(self.context)
-    
-    
+
+
 class ExpectData(TftpState):
     """Just sent an ACK packet. Waiting for DAT."""
 
-    def handle(self, pkt, raddress, rport):
-        """Handle the packet in response to an ACK, which should be a DAT."""
+    def handle(self, pkt: types.Data, raddress: str, rport: int) -> 'ExpectData':
+        """Handle the packet in response to an ACK, which should be a DAT.
+
+        Args:
+            pkt (types.Data): Expected Data packet any other will raise a Error
+        
+        Raises:
+            TftpOptionsError: Invalid Packet Type recieve or Error Packet Received
+
+        Returns:
+            ExpectData: Return next state class, either ExpectData or None if we received a short packet
+        """
         if isinstance(pkt, types.Data):
             return self.handle_dat(pkt)
 
