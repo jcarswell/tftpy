@@ -11,7 +11,7 @@ README = (base / 'README.md').read_text()
 
 setup(
       name='tftpy3',
-      version='0.1.0',
+      version='0.1.1',
       description='Python TFTP library',
       long_description=README,
       long_description_content_type='text/markdown',
@@ -24,6 +24,9 @@ setup(
           'Tracker': 'https://github.com/jcarswell/tftpy/issues',
       },
       python_requires='>=3.6',
+      install_requires=[
+        'pathvalidate',
+      ],
       classifiers=[
         'Programming Language :: Python :: 3.6',
         'Development Status :: 4 - Beta',
