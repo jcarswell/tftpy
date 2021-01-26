@@ -1,13 +1,33 @@
 # TFTPy3
-Author: Michael P. Soulier <msoulier@digitaltorque.ca>, Josh Carswell<br/>
-Copyright, Michael P. Soulier, 2010.
+[![Maintainability](https://api.codeclimate.com/v1/badges/761bede5a79828e30b54/maintainability)](https://codeclimate.com/github/jcarswell/tftpy/maintainability)
 
-TFTPy3 is a TFTP library for the Python programming language. It includes
-client and server classes, with sample implementations. Hooks are included for
+TFTPy3 is a fork of Michael P. Soulier TFTPy Project. TFTPy3 is a almost native 
+TFTP implementation in Python. It includes both a client and server. Hooks are included for
 easy inclusion in a UI for populating progress indicators. It supports RFCs
 1350, 2347, 2348 and the tsize option from RFC 2349.
 
-If you are moving from Michaels orginal code to this please see the migration notes
+While this fork has many goals, the primary goal is re-implement the way the server
+interacts with the "file system." While the original project did support dynamic 
+functions for both read and write, the method in which they were implemented was
+down right obscure. Instead of implementing a TFTP root along side the dynamic
+functions, the tftp root will be an initialization vector for the new file system
+interface class. With this new class there will be a clear method in which to 
+override the base class and implement extensions that suite the users needs,
+on such example of an override class would be a Templating system that is read from
+instead of from a file system.
+
+Additonally with this for, there has been some Major code clean-up in the proccess
+of gaining a better understanding of how the server flow. As such the code is well
+documented and many modern nicities have been added, such as f-strings and annotations.
+All of the work however does not come with out a drawback in that there are some breaking
+changes from the original source code, though all of this is documented below in the 
+migration notes section.
+
+<b>If you are moving from Michaels orginal code to this please see the migration notes</b>
+
+### Limitations:
+- Only 'octet' mode is supported. (technically NETASCII is supported by the server, though it needs to be tested)
+- The only options supported are blksize and tsize.
 
 ## Basic Usage
 ### Server
@@ -96,7 +116,7 @@ If you were not using the base TftpServer or TftpClient classes
 ## Dependencies:
 Python 3.6+
 
-## Trifles (Forked):
+## Cononical Source:
 Project Page: https://github.com/jcarswell/tftpy
 
 ### Original Project
@@ -108,14 +128,16 @@ License is the MIT License
 
 See COPYING in this distribution.
 
-## Limitations:
-- Only 'octet' mode is supported.
-- The only options supported are blksize and tsize.
-
-## Contributors:
-Josh Carswell
+## Authors and Contributers:
+Original Author: Michael P. Soulier <msoulier@digitaltorque.ca>
+Contributors:
+- Josh Carswell
 
 ## Releases:
+### TFTPy3 0.1.1:
+No significant changes in this realease, a few minor code tweaks and bug fixes from 0.1.0.
+This version however has working unittests, updated doc strings and annotations.
+
 ### TFTPy 0.9.0 -> TFTPy3 0.1.0:
 Major re-write of the code base removing support for python 2. All classes got broken out
 into independant modules for increased readability, support and imporateability. All names
@@ -201,3 +223,5 @@ This is an initial release in the spirit of "release early, release often".
 Currently the sample client works, supporting RFC 1350. The server is not yet
 implemented, and RFC 2347 and 2348 support (variable block sizes) is underway,
 planned for 0.2.
+
+Copyright, Michael P. Soulier, 2010.
