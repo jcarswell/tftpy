@@ -9,7 +9,9 @@ import socket, os, time
 import select
 import threading
 import logging
+
 from errno import EINTR
+from typing import Callable
 
 from tftpy.shared import TftpErrors,SOCK_TIMEOUT,MAX_BLKSIZE,TIMEOUT_RETRIES
 from tftpy.packet import types
@@ -22,19 +24,49 @@ class TftpServer:
     """This class implements a tftp server object. Run the listen() method to
     listen for client requests.
 
-    tftproot is the path to the tftproot directory to serve files from and/or
-    write them to.
+    dyn_file_func: Is a callable that takes a requested download
+        path that is not present on the file system and must return either a
+        file-like object to read from or None if the path should appear as not
+        found. This permits the serving of dynamic content.
+        
+        This function should take three arguments:
+            filename (str): The name of the file
+            raddress (str, kwarg): The clinets IP
+            rport (int, kwarg): Rhe clients port
+        
+        This function should return a file-like object or None
+    
 
-    dyn_file_func is a callable that takes a requested download
-    path that is not present on the file system and must return either a
-    file-like object to read from or None if the path should appear as not
-    found. This permits the serving of dynamic content.
+    upload_open: Is a callable that is triggered on every upload with the
+        requested destination path and server context. It must either return a
+        file-like object ready for writing or None if the path is invalid.
+        
+        This function should take two arguments:
+            path (str): The requested file path
+            context (tftp.Context.Server, kwarg): the current server context
+        
+        This function should return a file-like object or None
+    """
 
-    upload_open is a callable that is triggered on every upload with the
-    requested destination path and server context. It must either return a
-    file-like object ready for writing or None if the path is invalid."""
+    def __init__(self, tftproot:str =None, listenip:str =None, listenport:int =None, 
+                 dyn_file_func:Callable[[str,str,int],'file-like object'] =None, 
+                 upload_open:Callable[[str,str,int],'file-like object'] =None) -> None:
+        """Initialize the calls 
 
-    def __init__(self, tftproot=None, listenip=None, listenport=None, dyn_file_func=None, upload_open=None):
+        Args:
+            tftproot (str, optional): Server root. Defaults to ./tftpboot
+            listenip (str, optional): Listening address. Defaults to 127.0.0.1.
+            listenport (int, optional): Listening port. Defaults to 69.
+            dyn_file_func (file like save function, optional): If specified this 
+                function will be used instead of server root. Defaults to None.
+            upload_open (file like read function, optional): If specified 
+                the server will use this path for file reads instead of server root. Defaults to None.
+
+        Raises:
+            TftpException: dynamic file function(s) is not callable
+            TftpException: tftp root is not readable
+            FileNotFoundError: the tftp root specified doesn't exist
+        """
 
         self.listenip = listenip or '127.0.0.1'
         self.listenport = listenport or 69
@@ -66,10 +98,15 @@ class TftpServer:
         else:
             raise FileNotFoundError("The tftproot does not exist or isn't a directory")
 
-    def listen(self, timeout=None):
-        """Start a server listening on the supplied interface and port. This
-        defaults to INADDR_ANY (all interfaces) and UDP port 69. You can also
-        supply a different socket timeout value, if desired."""
+    def listen(self, timeout:int =None) -> None:
+        """Start a server listening on the supplied interface and port.
+
+        Args:
+            timeout (int, optional): The default server timeout. Defaults to 5 seconds
+
+        Raises:
+            socket.error: Failed to bind to a the IP Address and port
+        """
 
         self.timeout = timeout or SOCK_TIMEOUT
     
@@ -90,7 +127,9 @@ class TftpServer:
         logger.debug("server returning from while loop")
         self.shutdown_gracefully = self.shutdown_immediately = False
 
-    def running(self):
+    def running(self) -> None:
+        """Main Server loop to handle new connections"""
+        
         logger.debug("Starting receive loop...")
         while True:
             logger.debug("Configuration:")
@@ -107,11 +146,10 @@ class TftpServer:
                 self.sessions = []
                 break
 
-            elif self.shutdown_gracefully:
-                if not self.sessions:
-                    logger.warning("In graceful shutdown mode and all sessions complete.")
-                    self.sock.close()
-                    break
+            elif self.shutdown_gracefully and not self.sessions:
+                logger.warning("In graceful shutdown mode and all sessions complete.")
+                self.sock.close()
+                break
 
             # Build the inputlist array of sockets to select() on.
             inputlist = []
@@ -177,14 +215,14 @@ class TftpServer:
                     logger.warning(f"Strange, session {key} is not on the deletion list")
 
 
-    def process_data(self,readysock):
+    def process_data(self,readysock:socket.socket) -> list:
         """Handle the data sent to the server per session
 
         Args:
             readysock (socket.socket): current socket session
 
         Returns:
-            [dict]: deleted sessions
+            [list]: deleted sessions
         """
         
         deletion_list = []
@@ -248,12 +286,13 @@ class TftpServer:
                 
         return deletion_list
 
-    def stop(self, now=False):
+    def stop(self, now:bool =False) -> None:
         """Stop the server gracefully. Do not take any new transfers,
         but complete the existing ones. If force is True, drop everything
         and stop. Note, immediately will not interrupt the select loop, it
         will happen when the server returns on ready data, or a timeout.
-        ie. SOCK_TIMEOUT"""
+        ie. SOCK_TIMEOUT
+        """
 
         if now:
             self.shutdown_immediately = True
