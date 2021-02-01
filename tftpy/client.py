@@ -6,13 +6,15 @@ performed via the stanard python logging moduled."""
 
 import logging
 
-from typing import Callable,Union
+from typing import Callable,Union,TypeVar
 
 from tftpy.shared import MIN_BLKSIZE,MAX_BLKSIZE,SOCK_TIMEOUT,tftpassert
 from tftpy.context import Upload,Download
 from tftpy.exceptions import TftpException
 
 logger = logging.getLogger('tftpy.client')
+
+file_object = TypeVar('File-Like Object')
 
 class TftpClient:
     """This class is an implementation of a tftp client. Once instantiated, a
@@ -46,7 +48,7 @@ class TftpClient:
             if size < MIN_BLKSIZE or size > MAX_BLKSIZE:
                 raise TftpException(f"Invalid blksize: {size}")
 
-    def download(self, filename:str, output:Union['file-like object',str,'-'],
+    def download(self, filename:str, output:Union[file_object,str],
                  packethook:Callable[['tftpy.packet.types.Data'],None] =None,
                  timeout:int =SOCK_TIMEOUT):
         """This method initiates a tftp download from the configured remote
@@ -89,7 +91,7 @@ class TftpClient:
         logger.info(f"{metrics.resent_bytes:.2f} bytes in resent data")
         logger.info(f"Received {metrics.dupcount} duplicate packets")
 
-    def upload(self, filename:str, input:Union['file-like object',str,'-'],
+    def upload(self, filename:str, input:Union[file_object,str],
                packethook:Callable[['tftpy.packet.types.Data'],None] =None,
                timeout:int =SOCK_TIMEOUT):
         """This method initiates a tftp upload to the configured remote host,
