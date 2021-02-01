@@ -73,11 +73,11 @@ class TftpState:
         
         for k,v in options.items():
             k = k.lower()
-            if k == 'blksize' AND int(v) > MAX_BLKSIZE:
+            if k == 'blksize' and int(v) > MAX_BLKSIZE:
                 logger.info(f"Client requested blksize greater than {MAX_BLKSIZE} setting to maximum")
                 v = MAX_BLKSIZE
 
-            elif k == 'blksize' AND int(v) < MIN_BLKSIZE:
+            elif k == 'blksize' and int(v) < MIN_BLKSIZE:
                 logger.info(f"Client requested blksize less than {MIN_BLKSIZE} setting to minimum") 
                 v = MIN_BLKSIZE
 
@@ -215,7 +215,7 @@ class TftpState:
         if self.context.packethook:
             self.context.packethook(self.context.last_pkt)
 
-    def handle_dat(self, pkt: types.Data) -> Union[ExpectData,None]:
+    def handle_dat(self, pkt: types.Data) -> Union['ExpectData',None]:
         """This method handles a DAT packet during a client download, or a
         server upload.
 
