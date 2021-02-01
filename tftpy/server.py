@@ -11,7 +11,7 @@ import threading
 import logging
 
 from errno import EINTR
-from typing import Callable
+from typing import Callable,TypeVar
 
 from tftpy.shared import TftpErrors,SOCK_TIMEOUT,MAX_BLKSIZE,TIMEOUT_RETRIES
 from tftpy.packet import types
@@ -19,6 +19,8 @@ from tftpy.context import Server
 from tftpy.exceptions import TftpException,TftpTimeout
 
 logger = logging.getLogger('tftpy.server')
+
+file_object = TypeVar('File-Like Object')
 
 class TftpServer:
     """This class implements a tftp server object. Run the listen() method to
@@ -49,8 +51,8 @@ class TftpServer:
     """
 
     def __init__(self, tftproot:str =None, listenip:str =None, listenport:int =None, 
-                 dyn_file_func:Callable[[str,str,int],'file-like object'] =None, 
-                 upload_open:Callable[[str,str,int],'file-like object'] =None) -> None:
+                 dyn_file_func:Callable[[str,str,int],file_object] =None, 
+                 upload_open:Callable[[str,str,int],file_object] =None) -> None:
         """Initialize the calls 
 
         Args:
@@ -69,11 +71,15 @@ class TftpServer:
         """
 
         self.listenip = listenip or '127.0.0.1'
-        self.listenport = listenport or 69
         self.sock = None
         self.root = os.path.abspath(tftproot or './tftpboot')
         self.dyn_file_func = dyn_file_func
         self.upload_open = upload_open
+        
+        if listenport == None:
+            self.listenport = 69
+        else:
+            self.listenport = listenport
         
         # A dict of sessions, where each session is keyed by a string like
         # ip:tid for the remote end.
