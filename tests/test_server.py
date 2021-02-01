@@ -3,6 +3,17 @@ import unittest
 import os
 import time
 import threading
+import logging
+
+log = logging.getLogger('tftpy')
+log.setLevel(logging.INFO)
+
+# console handler
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+default_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(default_formatter)
+log.addHandler(handler)
 
 import tftpy
 from tftpy.exceptions import TftpTimeout
@@ -13,6 +24,7 @@ from tftpy.exceptions import TftpTimeout
 
 class TestTftpyServer(unittest.TestCase):
     def test_server_download_stop_now(self, output='/tmp/out'):
+        print('TEST - test_server_download_stop_now')
         root = os.path.dirname(os.path.abspath(__file__))
         server = tftpy.TftpServer(root,listenip='localhost',listenport=20001)
         client = tftpy.TftpClient('localhost',
@@ -43,6 +55,7 @@ class TestTftpyServer(unittest.TestCase):
                 time.sleep(1)
 
     def test_server_download_stop(self, output='/tmp/out'):
+        print('TEST - test_server_download_stop')
         root = os.path.dirname(os.path.abspath(__file__))
         server = tftpy.TftpServer(root, 'localhost', 20001)
         client = tftpy.TftpClient('localhost',
@@ -71,6 +84,8 @@ class TestTftpyServer(unittest.TestCase):
                 time.sleep(1)
 
     def test_server_download_dynamic_port(self, output='/tmp/out'):
+        print('TEST - test_server_download_dynamic_port')
+
         root = os.path.dirname(os.path.abspath(__file__))
 
         server = tftpy.TftpServer(root, 'localhost', 0)
